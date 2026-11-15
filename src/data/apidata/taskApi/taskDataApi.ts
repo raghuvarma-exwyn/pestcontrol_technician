@@ -5,6 +5,7 @@ import { formatDateTime, getDateTime } from "../../../utils/dateTimeUtils";
 /////Get User Data from session Storage///////////
 
 import { toZonedTime, format } from "date-fns-tz";
+import { Photo } from "@capacitor/camera";
 
 const formatToUaeTime = (dateTime: any) => {
   const uaeTimeZone = "Asia/Dubai";
@@ -1435,11 +1436,110 @@ export const checkOngoingTask = async () => {
 };
 
 
+function loadHtmlImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Failed to decode captured image"));
+    img.src = src;
+  });
+}
+
+function base64ToFile(base64: string, format = "jpeg"): File {
+  const normalized = base64.includes(",") ? base64.split(",")[1] : base64;
+  const byteString = atob(normalized);
+  const bytes = new Uint8Array(byteString.length);
+  for (let i = 0; i < byteString.length; i++) {
+    bytes[i] = byteString.charCodeAt(i);
+  }
+  const type = `image/${format}`;
+  return new File([bytes], "photo.jpg", { type });
+}
+
+async function resizeDataUrlToJpeg(
+  dataUrl: string,
+  maxEdge = 1280,
+  quality = 0.7
+): Promise<string> {
+  const img = await loadHtmlImage(dataUrl);
+  const maxDim = Math.max(img.width, img.height) || 1;
+  const scale = maxDim > maxEdge ? maxEdge / maxDim : 1;
+  const width = Math.max(1, Math.round(img.width * scale));
+  const height = Math.max(1, Math.round(img.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) {
+    return dataUrl;
+  }
+  ctx.drawImage(img, 0, 0, width, height);
+  const resized = canvas.toDataURL("image/jpeg", quality);
+  canvas.width = 0;
+  canvas.height = 0;
+  return resized;
+}
+
+export const convertToBlob = async (photo: Photo): Promise<File> => {
+  const source = photo.dataUrl
+    ? photo.dataUrl
+    : photo.base64String
+      ? `data:image/${photo.format || "jpeg"};base64,${photo.base64String}`
+      : "";
+
+  if (!source) {
+    throw new Error("Camera image data is unavailable");
+  }
+
+  const resized = await resizeDataUrlToJpeg(source);
+  return base64ToFile(resized, "jpeg");
+};
+
+export const uploadOtherTaskFile = async (formData: FormData) => {
+  const userData = getUserData();
+  const response = await fetch(`${API_BASE_URL}/v1/uplod-file`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${userData?.api_token}`,
+    },
+    body: formData,
+  });
+
+  const data = await response.json();
+  return data;
+};
+
 /////////////////////////Request Material////////////////////////////////////////////
 export const updateOtherTask = async (payload: any) => {
   const userData = getUserData();
   try {
     const response = await fetch(`${API_BASE_URL}/v1/update-other-task`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userData?.api_token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch treatment types");
+    }
+
+    const data = await response.json();
+    console.log("getTreatmentTypes: Parsed response data:", data);
+
+    return { response, data };
+  } catch (error) {
+    console.error("getTreatmentTypes: Error fetching treatment types:", error);
+    throw error;
+  }
+};
+/////////////////////////Request Material////////////////////////////////////////////
+export const sendLocationOffNotification = async (payload: any) => {
+  const userData = getUserData();
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/addNotifictionByTechnician`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

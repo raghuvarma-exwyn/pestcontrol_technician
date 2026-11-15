@@ -4,11 +4,19 @@ import App from './App';
 import { Capacitor } from '@capacitor/core';
 import { CapacitorSQLite, SQLiteConnection } from '@capacitor-community/sqlite';
 import { JeepSqlite } from "jeep-sqlite/dist/components/jeep-sqlite";
+import { installSecureFetchGuard } from './data/secureHttp';
+import { installUnauthorizedHandler } from './data/auth/unauthorizedHandler';
+import { purgeLegacyCredentials } from './data/auth/sessionAuth';
 
 
 
 window.addEventListener("DOMContentLoaded", async () => {
   try {
+    // Enforce HTTPS; then attach 401 → clearSession on top of that fetch.
+    installSecureFetchGuard();
+    installUnauthorizedHandler();
+    purgeLegacyCredentials();
+
     const platform = Capacitor.getPlatform();
 
 

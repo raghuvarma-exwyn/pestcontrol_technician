@@ -5,7 +5,10 @@ const config: CapacitorConfig = {
   appName: 'Pest Control Technician App',
   webDir: 'dist',
   server: {
-    androidScheme: 'https',
+    // Local WebView origin only. Remote APIs stay HTTPS.
+    // androidScheme https makes Chromium TLS-handshake localhost and logs net_error -202.
+    androidScheme: "http",
+    cleartext: true,
   },
   plugins: {
     PushNotifications: {

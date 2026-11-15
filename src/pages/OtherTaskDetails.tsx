@@ -1,55 +1,38 @@
 import {
+  IonAlert,
   IonBackButton,
   IonButton,
   IonButtons,
-  IonCard,
-  IonCol,
   IonContent,
   IonFooter,
   IonHeader,
   IonIcon,
   IonImg,
-  IonItem,
   IonList,
-  IonPage,
-  IonRow,
-  IonText,
-  IonThumbnail,
+  IonModal,
   IonTitle,
   IonToolbar,
   IonProgressBar,
 } from "@ionic/react";
 import { useState, useEffect } from "react";
 import { useHistory } from "react-router";
-import CustomBackButton from "../components/CustomBackButton";
-import CommonHeader from "../components/CommonHeader";
 import TaskDetailItems from "../components/TaskDetailItems";
-import { ellipse } from "ionicons/icons";
 import {
   checkOngoingTask,
+  convertToBlob,
   fetchOtherTaskDetails,
-  fetchTaskDetails,
-  getVisitExecutionDetails,
   updateOtherTask,
+  uploadOtherTaskFile,
 } from "../data/apidata/taskApi/taskDataApi";
 import { useParams } from "react-router-dom";
-import { taskInit } from "../data/apidata/taskApi/taskDataApi";
-import { formatDate, formatDateTime, formatDateTime2, getDate, getDateTime } from "../utils/dateTimeUtils";
+import { formatDateTime2, getDateTime } from "../utils/dateTimeUtils";
 import CustomAlert from "../components/CustomAlert";
-import {
-  retrieveNetworkTasksDetails,
-  retrieveNetworkTasksExecutionDetails,
-} from "../data/offline/entity/DataRetriever";
-import TaskProgress, {
-  saveTaskProgress,
-  setStartStatus,
-  updateTaskProgressStatusFromExecDetails,
-} from "../data/localstorage/taskStatusStorage";
-import { pencil, arrowBack } from "ionicons/icons";
-import { Network } from "@capacitor/network";
-import { submitTaskStart } from "../data/offline/entity/DataTransfer";
+import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { toast, ToastContainer } from "react-toastify";
 import NotificationLength from "../components/NotificationLength";
+import FullScreenLoader from "../components/FullScreenLoader";
+import { API_BASE_URL } from "../data/baseUrl";
+import { cameraOutline, close, imageOutline } from "ionicons/icons";
 
 const OtherTaskDetails: React.FC = () => {
   const params: any = useParams();
@@ -61,6 +44,8 @@ const OtherTaskDetails: React.FC = () => {
   const [nextButton, setNextButton] = useState<string>("Start");
   const [error, setError] = useState<string | null>(null);
   const [showAlert, setShowAlert] = useState(false);
+  const [confirmStop, setConfirmStop] = useState(false);
+  const [viewerSrc, setViewerSrc] = useState<string | null>(null);
 
   // const [taskId, settaskId] =  useState <string >();
   let taskId = "";
@@ -171,6 +156,102 @@ const OtherTaskDetails: React.FC = () => {
       state: { showAlert: true },
     });
   };
+
+  const resolveImageSrc = (image: any) => {
+    if (!image) return "";
+    const value =
+      typeof image === "string"
+        ? image
+        : image.file_name || image.filename || image.path || image.url || "";
+    if (!value) return "";
+    if (value.startsWith("http") || value.startsWith("data:")) return value;
+    const origin = API_BASE_URL.replace(/\/api\/?$/, "/");
+    return `${origin}uploads/other_tasks/${value}`;
+  };
+
+  const extractImageName = (uploaded: any): string => {
+    if (typeof uploaded === "string") {
+      return uploaded.split(/[/\\]/).pop() || uploaded;
+    }
+    if (uploaded && typeof uploaded === "object") {
+      const raw =
+        uploaded.file_name ||
+        uploaded.filename ||
+        uploaded.name ||
+        uploaded.path ||
+        "";
+      if (typeof raw === "string" && raw) {
+        return raw.split(/[/\\]/).pop() || raw;
+      }
+    }
+    return "";
+  };
+
+  const takePictureAndSubmit = async (action: "START" | "STOP") => {
+    try {
+      const image = await Camera.getPhoto({
+        quality: 40,
+        width: 1280,
+        height: 1280,
+        allowEditing: false,
+        saveToGallery: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+      });
+
+      if (!image.dataUrl) {
+        toast.error("Failed to capture image");
+        return;
+      }
+
+      setIsStartingTask(true);
+      const imageFile = await convertToBlob(image);
+      const formData = new FormData();
+      formData.append("file", imageFile, "photo.jpg");
+
+      const uploadResponse = await uploadOtherTaskFile(formData);
+      if (uploadResponse?.status == 200 && uploadResponse.success) {
+        const imageName = extractImageName(uploadResponse.data);
+        if (!imageName) {
+          toast.error("Image upload did not return a file name");
+          return;
+        }
+        await submitTaskUpdate(action, imageName);
+      } else {
+        toast.error(uploadResponse?.message ?? "Image upload failed");
+      }
+    } catch (error) {
+      console.error("Error taking picture:", error);
+      toast.error("Failed to capture or upload image");
+    } finally {
+      setIsStartingTask(false);
+    }
+  };
+
+  const submitTaskUpdate = async (action: "START" | "STOP", imageName: string) => {
+    const formattedDate = getDateTime();
+    const payload =
+      action === "START"
+        ? {
+            id: taskDetails.id,
+            start_time: formattedDate,
+            image: imageName,
+          }
+        : {
+            id: taskDetails.id,
+            end_time: formattedDate,
+            image: imageName,
+          };
+
+    const { data } = await updateOtherTask(payload);
+    if (data?.success === false) {
+      toast.error(data?.message || "Failed to update task");
+      return;
+    }
+    toast.success(data?.message || (action === "START" ? "Task started" : "Task ended"));
+    fetchTDetails(taskDetails.id);
+  };
+
   const startTask = async () => {
     const isOngoing: any = await checkOngoingTask();
     console.log("isOngoing", isOngoing);
@@ -183,49 +264,15 @@ const OtherTaskDetails: React.FC = () => {
             { autoClose: 3000 }
           );
           return;
-        } else {
-          console.log("taskData.service_status == On Going ");
-          try {
-            const formattedDate = getDateTime();
-            const payload = {
-              id: taskDetails.id,
-              start_time: formattedDate
-            }
-            console.log(payload);
-            const response = await updateOtherTask(payload);
-            console.log(response);
-            fetchTDetails(taskDetails.id);
-          } catch (error) {
-            console.error("Error:", error);
-            // toast.error('Server not responding. Please try again later.');
-          }
         }
-        //history.push("/taskexecution");
+        await takePictureAndSubmit("START");
       } else if (taskDetails.start_time !== null && taskDetails.end_time == null) {
-        try {
-            const formattedDate = getDateTime();
-            const payload = {
-              id: taskDetails.id,
-              end_time: formattedDate
-            }
-            console.log(payload);
-            const response = await updateOtherTask(payload);
-            console.log(response);
-            fetchTDetails(taskDetails.id);
-          } catch (error) {
-            console.error("Error:", error);
-            // toast.error('Server not responding. Please try again later.');
-          }
-      } else {
-
+        setConfirmStop(true);
       }
     } catch (error) {
       console.error("Error:", error);
-      // toast.error('Server not responding. Please try again later.');
-    } finally {
     }
     console.log("Start or Continue Task . task data = ", taskDetails);
-
   };
   const handleCloseAlert = () => {
     setShowAlert(false);
@@ -290,6 +337,85 @@ const OtherTaskDetails: React.FC = () => {
                 );
               })}
           </IonList>
+          {(taskDetails.start_time ||
+            taskDetails.start_image ||
+            taskDetails.end_image) && (
+            <section className="otherTaskPhotos">
+              <div className="otherTaskPhotosHead">
+                <IonIcon icon={imageOutline} aria-hidden="true" />
+                <h3>Captured Photos</h3>
+              </div>
+              <div className="otherTaskPhotoGrid">
+                <article className="otherTaskPhotoCard">
+                  <div className="otherTaskPhotoMeta">
+                    <span className="otherTaskPhotoChip otherTaskPhotoChipStart">
+                      Start
+                    </span>
+                    <small>
+                      {taskDetails.start_time
+                        ? formatDateTime2(taskDetails.start_time)
+                        : "Pending"}
+                    </small>
+                  </div>
+                  {taskDetails.start_image ? (
+                    <button
+                      type="button"
+                      className="otherTaskPhotoHit"
+                      onClick={() =>
+                        setViewerSrc(resolveImageSrc(taskDetails.start_image))
+                      }
+                    >
+                      <img
+                        src={resolveImageSrc(taskDetails.start_image)}
+                        alt="Start capture"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </button>
+                  ) : (
+                    <div className="otherTaskPhotoEmpty">
+                      <IonIcon icon={cameraOutline} aria-hidden="true" />
+                      <p>Not captured yet</p>
+                    </div>
+                  )}
+                </article>
+
+                <article className="otherTaskPhotoCard">
+                  <div className="otherTaskPhotoMeta">
+                    <span className="otherTaskPhotoChip otherTaskPhotoChipEnd">
+                      End
+                    </span>
+                    <small>
+                      {taskDetails.end_time
+                        ? formatDateTime2(taskDetails.end_time)
+                        : "Pending"}
+                    </small>
+                  </div>
+                  {taskDetails.end_image ? (
+                    <button
+                      type="button"
+                      className="otherTaskPhotoHit"
+                      onClick={() =>
+                        setViewerSrc(resolveImageSrc(taskDetails.end_image))
+                      }
+                    >
+                      <img
+                        src={resolveImageSrc(taskDetails.end_image)}
+                        alt="End capture"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </button>
+                  ) : (
+                    <div className="otherTaskPhotoEmpty">
+                      <IonIcon icon={cameraOutline} aria-hidden="true" />
+                      <p>Not captured yet</p>
+                    </div>
+                  )}
+                </article>
+              </div>
+            </section>
+          )}
         </div>
 
       </IonContent>
@@ -299,12 +425,65 @@ const OtherTaskDetails: React.FC = () => {
             className="ion-button"
             expand="full"
             color={"primary"}
+            disabled={nextButton === "Task Completed" || isStartingTask}
             onClick={(e) => startTask()}
           >
             {nextButton}
           </IonButton>
         </IonToolbar>
       </IonFooter>
+      <FullScreenLoader isLoading={isStartingTask} />
+      <IonAlert
+        isOpen={confirmStop}
+        header="Are you sure this task is done?"
+        buttons={[
+          {
+            text: "No",
+            cssClass: "alert-button-no",
+            handler: () => setConfirmStop(false),
+          },
+          {
+            text: "Yes",
+            role: "confirm",
+            cssClass: "alert-button-primary",
+            handler: async () => {
+              setConfirmStop(false);
+              await takePictureAndSubmit("STOP");
+            },
+          },
+        ]}
+        onDidDismiss={() => setConfirmStop(false)}
+      />
+
+      <IonModal
+        className="otherTaskImageViewerModal"
+        isOpen={Boolean(viewerSrc)}
+        onDidDismiss={() => setViewerSrc(null)}
+      >
+        <div
+          className="otherTaskImageViewer"
+          onClick={() => setViewerSrc(null)}
+          role="presentation"
+        >
+          <button
+            type="button"
+            className="otherTaskImageViewerClose"
+            onClick={() => setViewerSrc(null)}
+            aria-label="Close image"
+          >
+            <IonIcon icon={close} />
+          </button>
+          {viewerSrc && (
+            <img
+              className="otherTaskImageViewerImg"
+              src={viewerSrc}
+              alt="Captured photo"
+              decoding="async"
+              onClick={(event) => event.stopPropagation()}
+            />
+          )}
+        </div>
+      </IonModal>
 
       <CustomAlert
         isOpen={showAlert}

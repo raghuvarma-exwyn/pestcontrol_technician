@@ -64,8 +64,6 @@ import { appSettings, postDataToLocationTracking } from "./data/apidata/authApi/
 import ChangePasswordForm from "./components/ChangePassword";
 import Forms from "./pages/Forms";
 import FormData from "./pages/FormData";
-import "./pages/Unthorized";
-import { navigate } from "ionicons/icons";
 import RedirectPage from "./pages/RedirectPage";
 import { registerPushHandlers } from "./utils/pushNotiications";
 import CreateTask from "./pages/CreateTask";
@@ -82,18 +80,19 @@ import NetworkStatus from "./components/NetworkStatus";
 import AppUpdate from "./components/AppUpdate";
 import { LoadScript, useLoadScript } from "@react-google-maps/api";
 import CreateCallOut from "./pages/CreateCallOut";
-import { Storage } from '@capacitor/storage';
 import OtherTasks from "./pages/OtherTasks";
 import OtherTaskDetails from "./pages/OtherTaskDetails";
+import { sendLocationOffNotification } from "./data/apidata/taskApi/taskDataApi";
+import PrivateRoute from "./components/PrivateRoute";
+import { isAuthenticated, getSessionUser } from "./data/auth/sessionAuth";
 
 setupIonicReact();
 const getUserId = () => {
-  const userDataString = localStorage.getItem("userData");
-  if (userDataString) {
-    const userData = JSON.parse(userDataString);
+  const userData = getSessionUser();
+  if (userData?.user_id != null) {
     return userData.user_id;
   }
-  throw new Error("User ID not available in session storage");
+  throw new Error("User ID not available in session");
 };
 
 const App: React.FC = () => {
@@ -101,12 +100,12 @@ const App: React.FC = () => {
   const [error, setError] = useState<string>("");
   const [position, setPosition] = useState<any>();
   const [appInfo, setAppInfo] = useState<any>([]);
-  const [googleApiKey,setGoogleApiKey] = useState<string>(localStorage.getItem('Google_Map_API_Key') || '');
+  const [googleApiKey, setGoogleApiKey] = useState<string>(localStorage.getItem('Google_Map_API_Key') || '');
   const [appVersion, setAppVersion] = useState<string>('');
   const history = useHistory();
   const libraries = ['places', 'geometry'];
 
-  
+
   useEffect(() => {
     localStorage.setItem('app_name', 'pest_control');
     handlePlatform();
@@ -114,7 +113,7 @@ const App: React.FC = () => {
     console.log("Checking User session");
     const checkInFlag = localStorage.getItem("checkInFlag");
 
-    if (checkIfLoggedIn()) {
+    if (isAuthenticated()) {
       pollLocation(); // Fetch geolocation immediately
       const geolocationInterval = setInterval(pollLocation, 60000); // Fetch geolocation every 1 minute
       // User Logged in Navigate to Home or Technician Dashboard
@@ -139,23 +138,77 @@ const App: React.FC = () => {
       }
     };
 
-    const backButtonListener : any = Appp.addListener('backButton', handleBackButton);
+    const backButtonListener: any = Appp.addListener('backButton', handleBackButton);
 
     return () => {
       backButtonListener.remove();
     };
   }, [history]);
-  const checkIfLoggedIn = () => {
-    const userDataString = localStorage.getItem("userData");
-
-    if (userDataString && userDataString !== undefined) {
-      const parsedData = JSON.parse(userDataString);
-      return !!parsedData.api_token;
-    }
-    return false;
-  };
+  let locationFailCount = 0;
+  const MAX_FAILS = 3;
 
   const pollLocation = async () => {
+    try {
+      const actTaskDataString = localStorage.getItem("activeTaskData");
+      let actTaskId = "";
+
+      if (actTaskDataString) {
+        let actTaskData = JSON.parse(actTaskDataString);
+        console.log("Poll - act task data = ", actTaskData);
+
+        if (actTaskData && actTaskData.id) {
+          actTaskId = actTaskData.id;
+        }
+      }
+
+      const userId = getUserId();
+      const position = await getCurrentLocation();
+
+      // ❌ LOCATION FAILED
+      if (!position) {
+        locationFailCount++;
+        console.log("Location failed count:", locationFailCount);
+
+        if (locationFailCount >= MAX_FAILS) {
+          console.log("Triggering notification after 3 failures");
+
+          await sendLocationOffNotification({user_id : userId, app_name : "Technician"});
+
+          // reset after notifying
+          locationFailCount = 0;
+        }
+
+        return;
+      }
+
+      // ✅ LOCATION SUCCESS
+      locationFailCount = 0;
+
+      console.log("Geolocation fetched for polling:", position.coords);
+      setPosition(position);
+
+      await postDataToLocationTracking(
+        position.coords.latitude,
+        position.coords.longitude,
+        actTaskId
+      );
+
+    } catch (e) {
+      console.error("Polling error:", e);
+
+      // Treat exception also as failure (optional but recommended)
+      locationFailCount++;
+
+      if (locationFailCount >= MAX_FAILS) {
+        const userId = getUserId();
+        await sendLocationOffNotification({user_id : userId, app_name : "Technician"});
+        locationFailCount = 0;
+      }
+
+      setError("Geolocation Error or user not logged in.");
+    }
+  };
+  const pollLocationn = async () => {
     try {
       const actTaskDataString = localStorage.getItem("activeTaskData");
       let actTaskId = "";
@@ -182,7 +235,7 @@ const App: React.FC = () => {
     }
   };
 
-  
+
   async function handlePlatform() {
     try {
       const AppSettings = await appSettings();
@@ -191,7 +244,7 @@ const App: React.FC = () => {
         const GoogleKey = AppSettings.data.data.find((setting: any) => setting.title === "Google_Map_API_Key");
         console.log(GoogleKey);
         if (GoogleKey) {
-            localStorage.setItem('Google_Map_API_Key',GoogleKey.description);
+          localStorage.setItem('Google_Map_API_Key', GoogleKey.description);
 
         }
       }
@@ -218,129 +271,131 @@ const App: React.FC = () => {
     }
   }
   return (
-    
+
     <IonApp>
       <LoadScript googleMapsApiKey={googleApiKey} libraries={libraries}></LoadScript>
-      <NetworkStatus/>
-      <AppUpdate/>
+      <NetworkStatus />
+      <AppUpdate />
       <ToastContainer />
-      
+
       <IonReactRouter>
         <IonRouterOutlet>
-          <NetworkSpeedCheck/>
+          <NetworkSpeedCheck />
           <Switch>
-            <Route exact path="/home">
+            <PrivateRoute exact path="/home">
               <Home />
-            </Route>
-            <Route exact path="/ChemicalUsedPreview">
+            </PrivateRoute>
+            <PrivateRoute exact path="/ChemicalUsedPreview">
               <ChemicalUsedPreview />
-            </Route>
+            </PrivateRoute>
 
-            <Route exact path="/pestActivityfoundpreview">
+            <PrivateRoute exact path="/pestActivityfoundpreview">
               <PestActivityFoundPreview />
-            </Route>
-            <Route exact path="/dashboard">
+            </PrivateRoute>
+            <PrivateRoute exact path="/dashboard">
               <Dashboard />
-            </Route>
-            <Route exact path="/MaterialList">
+            </PrivateRoute>
+            <PrivateRoute exact path="/MaterialList">
               <MaterialList />
-            </Route>
-            <Route exact path="/tasks">
+            </PrivateRoute>
+            <PrivateRoute exact path="/tasks">
               <Tasks />
-            </Route>
-            <Route exact path="/othertasks">
+            </PrivateRoute>
+            <PrivateRoute exact path="/othertasks">
               <OtherTasks />
-            </Route>
-            <Route exact path="/tasks/:taskId">
+            </PrivateRoute>
+            <PrivateRoute exact path="/tasks/:taskId">
               <TaskDetails />
-            </Route>
-            <Route exact path="/othertasks/:taskId">
+            </PrivateRoute>
+            <PrivateRoute exact path="/othertasks/:taskId">
               <OtherTaskDetails />
-            </Route>
-            <Route exact path="/formdata/:taskId">
+            </PrivateRoute>
+            <PrivateRoute exact path="/formdata/:taskId">
               <FormData />
-            </Route>
-            <Route exact path="/taskreschedule">
+            </PrivateRoute>
+            <PrivateRoute exact path="/taskreschedule">
               <TaskReschedule />
-            </Route>
-            <Route exact path="/taskexecution">
+            </PrivateRoute>
+            <PrivateRoute exact path="/taskexecution">
               <TaskExecution />
-            </Route>
-            <Route exact path="/taskpreview">
+            </PrivateRoute>
+            <PrivateRoute exact path="/taskpreview">
               <TaskPreview />
-            </Route>
-            <Route exact path="/teamattendance/:techniciansRequired">
+            </PrivateRoute>
+            <PrivateRoute exact path="/teamattendance/:techniciansRequired">
               <TeamAttendance />
-            </Route>
-            <Route exact path="/availabletechnicians">
+            </PrivateRoute>
+            <PrivateRoute exact path="/availabletechnicians">
               <AvailableTechnicians />
-            </Route>
-            <Route exact path="/pestactivityfound">
+            </PrivateRoute>
+            <PrivateRoute exact path="/pestactivityfound">
               <PestActivityFound />
-            </Route>
-            <Route exact path="/recommendations">
+            </PrivateRoute>
+            <PrivateRoute exact path="/recommendations">
               <Recommendations />
-            </Route>
-            <Route exact path="/chemicalused">
+            </PrivateRoute>
+            <PrivateRoute exact path="/chemicalused">
               <ChemicalUsed />
-            </Route>
-            <Route exact path="/chemicaluseddetails">
+            </PrivateRoute>
+            <PrivateRoute exact path="/chemicaluseddetails">
               <ChemicalUsedDetails />
-            </Route>
-            <Route exact path="/workdonedetails">
+            </PrivateRoute>
+            <PrivateRoute exact path="/workdonedetails">
               <WorkDoneDetails />
-            </Route>
-            <Route exact path="/feedbackfollowup">
+            </PrivateRoute>
+            <PrivateRoute exact path="/feedbackfollowup">
               <FeedbackFollowup />
-            </Route>
-            <Route exact path="/site">
+            </PrivateRoute>
+            <PrivateRoute exact path="/site">
               <Site />
-            </Route>
-            <Route exact path="/siteviewlocation/:taskId">
+            </PrivateRoute>
+            <PrivateRoute exact path="/siteviewlocation/:taskId">
               <SiteViewLocation />
-            </Route>
-            <Route exact path="/notification">
+            </PrivateRoute>
+            <PrivateRoute exact path="/notification">
               <Notification />
-            </Route>
-            <Route exact path="/preview">
+            </PrivateRoute>
+            <PrivateRoute exact path="/preview">
               <Preview />
-            </Route>
-            <Route exact path="/profile">
+            </PrivateRoute>
+            <PrivateRoute exact path="/profile">
               <Profile />
-            </Route>
-            <Route exact path="/leaverequestlist">
+            </PrivateRoute>
+            <PrivateRoute exact path="/leaverequestlist">
               <LeaveRequestList />
-            </Route>
-            <Route exact path="/applyleave">
+            </PrivateRoute>
+            <PrivateRoute exact path="/applyleave">
               <ApplyLeave />
-            </Route>
+            </PrivateRoute>
             <Route path="/login">
               <Login />
             </Route>
-            <Route exact path="/createTask">
+            <PrivateRoute exact path="/createTask">
               <CreateTask />
-            </Route>
-            <Route exact path="/createCallOut">
+            </PrivateRoute>
+            <PrivateRoute exact path="/createCallOut">
               <CreateCallOut />
-            </Route>
-            <Route exact path="/stocktransferreddetails/:id">
+            </PrivateRoute>
+            <PrivateRoute exact path="/stocktransferreddetails/:id">
               <StockTransferredDetails />
-            </Route>
+            </PrivateRoute>
 
-            <Route exact path="/stocktransferredreceived">
+            <PrivateRoute exact path="/stocktransferredreceived">
               <StockTransferredReceived />
-            </Route>
+            </PrivateRoute>
 
-            <Route exact path="/stocktransfer">
+            <PrivateRoute exact path="/stocktransfer">
               <StockTransfer />
-            </Route>
+            </PrivateRoute>
             <Route path="/redirectpage">
               <RedirectPage />
             </Route>
-            <Route exact path="/forms">
+            <PrivateRoute exact path="/forms">
               <Forms />
-            </Route>
-            <Route path="/changePassword" component={ChangePasswordForm} />
+            </PrivateRoute>
+            <PrivateRoute path="/changePassword">
+              <ChangePasswordForm onClose={() => undefined} />
+            </PrivateRoute>
 
             <Route exact path="/">
               <Redirect to="/redirectpage" />

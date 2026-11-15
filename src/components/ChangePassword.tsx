@@ -4,7 +4,12 @@ import { toast } from "react-toastify";
 import { useHistory } from "react-router";
 import '../components/ChangePasswordForm.css'
 import { changePasswordApi } from "../data/apidata/authApi/dataApi";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; // Importing eye icons
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import {
+  clearSession,
+  getSessionUser,
+  validateNewPassword,
+} from "../data/auth/sessionAuth";
 
 
 
@@ -30,22 +35,12 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onClose }) => {
   const history = useHistory();
 
   useEffect(() => {
-    const fetchUserData = () => {
-      try {
-        const userDataString = localStorage.getItem("userData");
-        if (userDataString) {
-          const userData = JSON.parse(userDataString);
-          setUserData(userData);
-        } else {
-          throw new Error("User Data is not available");
-        }
-      } catch (error: any) {
-        console.error(error.message);
-        setGeneralError("User data is not available.");
-      }
-    };
-
-    fetchUserData();
+    const user = getSessionUser();
+    if (user) {
+      setUserData(user);
+    } else {
+      setGeneralError("User data is not available.");
+    }
   }, []);
   // Function to clear errors on input change
   const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, clearError: React.Dispatch<React.SetStateAction<string | null>>, value: string) => {
@@ -71,21 +66,26 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onClose }) => {
     if (!newPassword) {
       setNewPasswordError("Please enter the new password.");
       hasError = true;
-    } else if (newPassword.length < 8) {
-      setNewPasswordError("The new password must be at least 8 characters.");
-      hasError = true;
+    } else {
+      const strengthError = validateNewPassword(newPassword);
+      if (strengthError) {
+        setNewPasswordError(strengthError);
+        hasError = true;
+      }
     }
 
     if (!confirmNewPassword) {
       setConfirmNewPasswordError("Please enter the confirm new password.");
       hasError = true;
-    } else if (confirmNewPassword.length < 8) {
-      setConfirmNewPasswordError("The confirm password must be at least 8 characters.");
-      hasError = true;
     }
 
     if (!hasError && newPassword && confirmNewPassword && newPassword !== confirmNewPassword) {
       setConfirmNewPasswordError("New password and confirm new password must match.");
+      hasError = true;
+    }
+
+    if (newPassword && newPassword === currentPassword) {
+      setNewPasswordError("New password must be different from the current password.");
       hasError = true;
     }
 
@@ -114,10 +114,9 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onClose }) => {
 
       if (responseData.data) {
         if (responseData.success) {
-          // toast.success(responseData.message);
-          console.log("Password changed successfully!");
-          history.push("/login");
-          // Delay for 2 seconds
+          toast.success(responseData.message || "Password changed. Please sign in again.");
+          await clearSession();
+          history.replace("/login");
         } else {
           toast.error(responseData.message);
           setGeneralError(responseData.message);
@@ -129,9 +128,8 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onClose }) => {
         setGeneralError(`Failed to change password: ${errorMessage}`);
       }
     } catch (error) {
-      console.error("Error:", error);
-      // toast.error("An unexpected error occurred. Please try again later.");
-      // setGeneralError("An unexpected error occurred. Please try again later.");
+      console.error("Change password failed");
+      toast.error("Unable to change password. Please try again.");
     } finally {
       setIsLoading(false);
     }

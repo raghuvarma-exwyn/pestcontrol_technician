@@ -2,14 +2,18 @@ import { API_BASE_URL } from "../../baseUrl";
 import { getActiveTaskData } from "../../localstorage/taskUtils";
 import { getCurrentLocation } from "../../providers/GeoLocationProvider";
 import { getNetworkStatus } from "../../providers/NetworkCheck";
+import {
+  getAuthHeaders,
+  getSessionUser,
+} from "../../auth/sessionAuth";
 /////Get User Data from session Storage///////////
 const getUserData = () => {
-  const userDataString = localStorage.getItem("userData");
-  if (!userDataString) {
+  const userData = getSessionUser();
+  if (!userData) {
     console.error("User data is not available");
     throw new Error("User Data Not available");
   }
-  return JSON.parse(userDataString);
+  return userData;
 };
 export const appSettings = async () => {
   await getNetworkStatus();
@@ -76,10 +80,7 @@ export const userCheckIn = async () => {
 
     const response = await fetch(`${API_BASE_URL}/v1/user-attendance`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userData?.api_token}`,
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(requestBody),
     });
 
@@ -126,10 +127,7 @@ export const postDataToLocationTracking = async (
       `${API_BASE_URL}/v1/technician-location-tracking`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userData?.api_token}`,
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(data),
       }
     );
@@ -168,10 +166,7 @@ export const handleCheckOut = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/v1/user-attendance`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userData?.api_token}`,
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     });
 
@@ -195,13 +190,10 @@ export const handleCheckOut = async () => {
 ///////////////////////change password API///////////////////////////////////////////////////
 export const changePasswordApi = async (requestBody: any) => {
   try {
-    const userData = getUserData();
+    getUserData();
     const response = await fetch(`${API_BASE_URL}/v1/change-password`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userData.api_token}`,
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(requestBody),
     });
 

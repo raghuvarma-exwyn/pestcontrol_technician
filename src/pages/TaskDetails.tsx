@@ -57,6 +57,7 @@ const TaskDetails: React.FC = () => {
   const [nextButton, setNextButton] = useState<string>("Start");
   const [error, setError] = useState<string | null>(null);
   const [showAlert, setShowAlert] = useState(false);
+  const [allowInsufficientStock, setAllowInsufficientStock] = useState(false);
 
   // const [taskId, settaskId] =  useState <string >();
   let taskId = "";
@@ -271,6 +272,7 @@ const TaskDetails: React.FC = () => {
           const progressStatus: TaskProgress = setStartStatus("" + taskId);
           console.log("API Response:", data); // Print the response in the console
           if (data.is_chemicals_required) {
+            setAllowInsufficientStock(!!data.allow_insufficient_stock);
             setShowAlert(true);
           } else {
             history.push("/taskexecution");
@@ -279,6 +281,7 @@ const TaskDetails: React.FC = () => {
           console.error("Error Checking In ", response);
           setError(data.message);
           if (data.is_chemicals_required) {
+            setAllowInsufficientStock(!!data.allow_insufficient_stock);
             setShowAlert(true);
           }
         }
@@ -291,6 +294,13 @@ const TaskDetails: React.FC = () => {
   };
   const handleCloseAlert = () => {
     setShowAlert(false);
+    setAllowInsufficientStock(false);
+  };
+
+  const handleContinueToExecution = () => {
+    setShowAlert(false);
+    setAllowInsufficientStock(false);
+    history.push("/taskexecution");
   };
 
   // const navigateToTaskExe = () => {
@@ -304,6 +314,15 @@ const TaskDetails: React.FC = () => {
       role: "close",
       handler: () => handleCloseAlert(),
     },
+    ...(allowInsufficientStock
+      ? [
+          {
+            text: "Continue",
+            cssClass: "alert-button-confirm",
+            handler: () => handleContinueToExecution(),
+          },
+        ]
+      : []),
   ];
   const goBack = () => {
     history.goBack();

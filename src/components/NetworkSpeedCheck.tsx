@@ -25,8 +25,8 @@ const NetworkSpeedCheck: React.FC = () => {
 
         // Assume network is slow if the downlink is less than 1.5Mbps
         if (downlink < 1.5 && downlink > 0) {
-          toast.dismiss();
-          toast.info("Your network connection is slow", { autoClose: 1500, });
+          //toast.dismiss();
+          //toast.info("Your network connection is slow", { autoClose: 1500, });
         }
 
       }

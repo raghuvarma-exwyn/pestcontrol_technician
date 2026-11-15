@@ -19,7 +19,7 @@ export const getNetworkStatus = async () => {
 
           // Assume network is slow if the downlink is less than 1.5Mbps
           if (downlink < 1.5 && downlink > 0) {
-            toast.info("Your network connection is slow");
+            //toast.info("Your network connection is slow");
           }
         }
         return true;

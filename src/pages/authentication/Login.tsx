@@ -3,40 +3,40 @@ import {
   IonButton,
   IonCheckbox,
   IonContent,
-  IonHeader,
   IonImg,
   IonInput,
   IonItem,
   IonLabel,
   IonPage,
   IonText,
-  IonTitle,
-  IonToolbar,
-  IonRouterLink,
-  IonBadge,
   IonIcon,
   IonProgressBar,
-  IonFooter,
 } from "@ionic/react";
 import { useHistory } from "react-router";
 import { toast } from "react-toastify";
-import { loginApi, userCheckIn, userCheckIns } from "../../data/apidata/authApi/dataApi";
+import { loginApi, userCheckIns } from "../../data/apidata/authApi/dataApi";
 import "react-toastify/dist/ReactToastify.css";
 import { registerDevice } from "../../utils/pushNotiications";
-import { eye, eyeOff } from "ionicons/icons"; // Import icons
-import { Storage } from '@capacitor/storage';
+import { eye, eyeOff } from "ionicons/icons";
+import {
+  getRememberedUsername,
+  isAuthenticated,
+  purgeLegacyCredentials,
+  setRememberedUsername,
+  setSession,
+} from "../../data/auth/sessionAuth";
 
 const Login: React.FC = () => {
   const logo = "assets/images/psd-logo.svg";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginMessage, setLoginMessage] = useState("");
-  const app_version: any = localStorage.getItem('app_version');
-  const app_name: any = localStorage.getItem('app_name');
+  const app_version: any = localStorage.getItem("app_version");
+  const app_name: any = localStorage.getItem("app_name");
   const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const [showPassword, setShowPassword] = useState(false);
   const [isError, setIsError] = useState(false);
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -44,21 +44,22 @@ const Login: React.FC = () => {
   const history = useHistory();
 
   useEffect(() => {
-    const storedUsername = localStorage.getItem("username");
-    const storedPassword = localStorage.getItem("password");
-    const storedRememberMe = localStorage.getItem("rememberMe") === "true";
+    purgeLegacyCredentials();
 
-    if (storedRememberMe && storedUsername && storedPassword) {
-      setUsername(storedUsername);
-      setPassword(storedPassword);
-      setRememberMe(storedRememberMe);
+    if (isAuthenticated()) {
+      const checkInFlag = localStorage.getItem("checkInFlag");
+      history.replace(checkInFlag === "true" ? "/dashboard" : "/home");
+      return;
     }
 
-    // Register Push Handlers
-    // registerPushHandlers();
-    // Register the Device Token
+    const storedUsername = getRememberedUsername();
+    if (storedUsername) {
+      setUsername(storedUsername);
+      setRememberMe(true);
+    }
+
     registerDevice();
-  }, []);
+  }, [history]);
 
   const handleLogin = async (e: React.FormEvent) => {
     setLoading(true);
@@ -68,7 +69,6 @@ const Login: React.FC = () => {
     setLoginMessage("");
     setIsSubmitting(true);
 
-    // Validation
     if (!username) {
       setUsernameError("Please enter username");
     }
@@ -78,41 +78,42 @@ const Login: React.FC = () => {
 
     if (username && password) {
       try {
-        const { response, data } = await loginApi(username, password,app_name,app_version); // Call loginApi function
-        console.log(response);
-        console.log(data.data[0]);
+        const { response, data } = await loginApi(
+          username,
+          password,
+          app_name,
+          app_version
+        );
 
-        const userData = data.data[0];
-        if (response.ok) {
+        const userData = data?.data?.[0];
+        if (response.ok && userData?.api_token) {
+          setRememberedUsername(rememberMe ? username : null);
+          await setSession(userData);
+
           if (userData.last_action === "1") {
             try {
               await userCheckIns(userData);
-              localStorage.setItem("userData", JSON.stringify(userData));
-              await Storage.set({key: 'token', value: userData.api_token});
-              history.push("/dashboard");
-
+              history.replace("/dashboard");
             } catch (error) {
               console.error("Error during check-in:", error);
+              history.replace("/home");
             }
-
-
           } else {
-            localStorage.setItem("userData", JSON.stringify(data.data[0]));
-            console.log(data);
-            history.push("/home");
+            history.replace("/home");
           }
         } else {
-          if (data.error === "username") {
+          if (data?.error === "username") {
             setLoginMessage("Username is incorrect.");
-          } else if (data.error === "password") {
+          } else if (data?.error === "password") {
             setLoginMessage("Password is incorrect.");
           } else {
-            setLoginMessage(data.message);
+            setLoginMessage(data?.message || "Login failed.");
           }
-          toast.error(data.message, { autoClose: 3000 });
+          toast.error(data?.message || "Login failed.", { autoClose: 3000 });
         }
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Login error");
+        toast.error("Unable to sign in. Please try again.");
       } finally {
         setIsSubmitting(false);
         setLoading(false);
@@ -126,18 +127,6 @@ const Login: React.FC = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (rememberMe) {
-      localStorage.setItem("username", username);
-      localStorage.setItem("password", password);
-      localStorage.setItem("rememberMe", "true");
-    } else {
-      localStorage.removeItem("username");
-      localStorage.removeItem("password");
-      localStorage.removeItem("rememberMe");
-    }
-  }, [rememberMe, username, password]);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -157,6 +146,13 @@ const Login: React.FC = () => {
     }
   };
 
+  const handleRememberMeChange = (checked: boolean) => {
+    setRememberMe(checked);
+    if (!checked) {
+      setRememberedUsername(null);
+    }
+  };
+
   return (
     <IonPage>
       <IonContent fullscreen className="ion-login">
@@ -172,14 +168,14 @@ const Login: React.FC = () => {
             <h1>Login</h1>
             <p>Enter Email / Employee ID and Password</p>
           </IonText>
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleLogin} autoComplete="on">
             <IonLabel className="ion-label">Email / Employee ID</IonLabel>
             <IonItem lines="none">
               <IonInput
                 placeholder="Email"
                 value={username}
+                autocomplete="username"
                 onIonInput={handleUsernameChange}
-
               />
             </IonItem>
             {usernameError && <IonText color="danger">{usernameError}</IonText>}
@@ -190,6 +186,7 @@ const Login: React.FC = () => {
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={password}
+                autocomplete="current-password"
                 onIonInput={handlePasswordChange}
                 style={{ color: "black" }}
               />
@@ -207,7 +204,7 @@ const Login: React.FC = () => {
                 className="ionCheckbox ion-float-left"
                 labelPlacement="end"
                 checked={rememberMe}
-                onIonChange={(e) => setRememberMe(e.detail.checked)}
+                onIonChange={(e) => handleRememberMeChange(e.detail.checked)}
               >
                 Remember Me
               </IonCheckbox>
@@ -232,11 +229,10 @@ const Login: React.FC = () => {
               {loginMessage}
             </IonText>
           )}
-           <IonText className='loginVersion'>
-              <p>App Version &nbsp;{app_version}</p>
-            </IonText>
+          <IonText className="loginVersion">
+            <p>App Version &nbsp;{app_version}</p>
+          </IonText>
         </div>
-       
       </IonContent>
     </IonPage>
   );

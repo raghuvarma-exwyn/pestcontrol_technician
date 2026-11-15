@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react";
+import { getSessionUser, SessionUser } from "../auth/sessionAuth";
 
 const useUserData = () => {
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState<SessionUser | null>(null);
 
   useEffect(() => {
-    const userDataString = localStorage.getItem("userData");
-    if (!userDataString) {
-      console.error("User data is not available");
-      return;
-    }
-    setUserData(JSON.parse(userDataString));
+    setUserData(getSessionUser());
   }, []);
 
   return userData;

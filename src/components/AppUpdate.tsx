@@ -45,7 +45,7 @@ const AppUpdate: React.FC = () => {
                         }
                     }
                     if (platform === 'ios') {
-                        const IosVersion = AppSettings.data.data.find((setting: any) => setting.title === "Pest_Control_IOS_Version");
+                        const IosVersion = AppSettings.data.data.find((setting: any) => setting.title === " ");
                         console.log(IosVersion);
                         if (IosVersion.description > appInfos.version) {
                             const appLink = AppSettings.data.data.find((setting: any) => setting.title === "Pest_Control_IOS_App_link");
@@ -73,7 +73,14 @@ const AppUpdate: React.FC = () => {
         }
     };
     const updateApp = async () => {
-        const keysToKeep = ['device_token', 'rememberedUserName', 'rememberedPassword','app_name','app_version'];
+        const keysToKeep = [
+            'device_token',
+            'username',
+            'rememberMe',
+            'app_name',
+            'app_version',
+            'Google_Map_API_Key',
+        ];
         const savedValues = keysToKeep.map(key => ({ key, value: localStorage.getItem(key) }));
         localStorage.clear();
         savedValues.forEach(({ key, value }) => {
