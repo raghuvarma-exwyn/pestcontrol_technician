@@ -1,0 +1,163 @@
+.workDoneContent {
+  --padding-top: 8px;
+}
+
+.workDoneInner {
+  padding: 8px 16px calc(120px + env(safe-area-inset-bottom));
+}
+
+.workDoneIntro {
+  margin-bottom: 14px;
+}
+
+.workDoneIntro h1 {
+  margin: 0 0 4px;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--app-text, #2b2926);
+  letter-spacing: -0.01em;
+}
+
+.workDoneIntro p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--app-text-muted, #6d6860);
+  line-height: 1.4;
+}
+
+.wddCard {
+  background: var(--app-surface-elevated, #fff);
+  border: 1px solid var(--app-border, #e2ddd6);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(43, 41, 38, 0.06);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.wddCardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.wddIndex {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--app-surface-muted, #ebe8e3);
+  color: var(--app-primary-dark, #6f5a42);
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.wddLabel {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--app-text, #2b2926);
+  line-height: 1.35;
+}
+
+.wddCardHeader .wddLabel {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.pafRequired {
+  color: #d6455a;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.pafControl.wddControl,
+.wddControl {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #cfc8be;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.wddControl:focus-within {
+  border-color: var(--app-primary, #8b7355);
+}
+
+.wddControl ion-select,
+.wddControl ion-textarea {
+  flex: 1 1 auto;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 44px;
+  margin: 0;
+  border: none !important;
+  --background: transparent;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --border-width: 0 !important;
+  --highlight-color-focused: transparent;
+  --placeholder-color: #8a847a;
+}
+
+.wddControl ion-select {
+  --padding-end: 34px;
+}
+
+.wddControl ion-select::part(icon) {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  margin: 0;
+  opacity: 0.55;
+}
+
+.wddControl.wddTextarea {
+  min-height: 88px;
+  align-items: stretch;
+}
+
+.wddControl.wddTextarea ion-textarea {
+  min-height: 88px;
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+}
+
+.wddReason {
+  margin-top: 12px;
+}
+
+.wddError {
+  display: inline-flex;
+  margin: 6px 0 0 2px;
+  font-weight: 500;
+}
+
+.workDonePage {
+  .ion-footer {
+    z-index: 10;
+    background: var(--app-surface-elevated, #fff);
+  }
+
+  .ion-footer .ionFooterTwoButtons {
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+.workDoneForm {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}

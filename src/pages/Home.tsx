@@ -154,21 +154,18 @@ const Home: React.FC = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="ion-home-content">
-        <div className="homeHeader ion-margin-vertical ion-padding-horizontal">
+        <div className="homeHeader ion-padding-horizontal">
           <IonImg
-            className="logoMd ion-float-start"
+            className="logoMd"
             src="assets/images/psd-logo.svg"
+            alt="PSD logo"
           />
-          <div className="ion-float-end headerBts">
-           
-            
-             <NotificationLength/>
-
-              <IonButton shape="round" routerLink={"/profile"}>
-                <IonImg src="assets/images/account-user.svg" />
-              </IonButton>
-             
-            </div>
+          <div className="headerBts">
+            <NotificationLength />
+            <IonButton shape="round" routerLink={"/profile"}>
+              <IonImg src="assets/images/account-user.svg" />
+            </IonButton>
+          </div>
         </div>
 
         <div className="homeWrapp ion-padding-horizontal">
@@ -182,7 +179,7 @@ const Home: React.FC = () => {
             </IonThumbnail>
             {userData && (
               <IonText>
-                <h5>Welcome!</h5>
+                <h5>Welcome</h5>
                 <h1>
                   {userData.first_name} {userData.last_name}
                 </h1>
@@ -199,36 +196,15 @@ const Home: React.FC = () => {
                   <IonText>Check In</IonText>
                 </IonCard>
               </IonCol>
-
-              {/* <IonCol size="4">
-                <IonCard> */}
-              {/* <IonImg src="assets/images/sync-icon.svg" /> */}
-              {/* <IonText>Synk</IonText> */}
-              {/* <Db /> */}
-              {/* <IonText onClick={()=>GetTaskListByStatus("true")}>getTaskListByStatus</IonText> */}
-              {/* </IonCard>
-              </IonCol> */}
-              {/* 
-              <IonCol size="4">
-                <IonCard onClick={handleSyncClick}>
-                  <IonImg src="assets/images/sync-icon.svg" />
-                  <IonText>Sync Up</IonText>
-                </IonCard>
-              </IonCol> */}
-
               <IonCol size="4">
                 <IonCard routerLink={"/LeaveRequestList"}>
                   <IonImg src="assets/images/apply-leave-icon.svg" />
                   <IonText>Apply For Leave</IonText>
                 </IonCard>
               </IonCol>
-              <IonCol
-                size="4"
-                className="ion-no-padding"
-                style={{ marginTop: "15px" }}
-              >
-                <IonCard className="ion-nomargin" routerLink={"/stocktransfer"}>
-                  <IonImg src="assets/images/stock-transfer-home-icon.svg"></IonImg>
+              <IonCol size="4">
+                <IonCard routerLink={"/stocktransfer"}>
+                  <IonImg src="assets/images/stock-transfer-home-icon.svg" />
                   <IonText>Stock Transfer</IonText>
                 </IonCard>
               </IonCol>

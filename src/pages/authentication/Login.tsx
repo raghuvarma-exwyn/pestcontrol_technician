@@ -5,19 +5,20 @@ import {
   IonContent,
   IonImg,
   IonInput,
-  IonItem,
-  IonLabel,
   IonPage,
   IonText,
   IonIcon,
   IonProgressBar,
 } from "@ionic/react";
+import "./Login.css";
 import { useHistory } from "react-router";
 import { toast } from "react-toastify";
 import { loginApi, userCheckIns } from "../../data/apidata/authApi/dataApi";
 import "react-toastify/dist/ReactToastify.css";
 import { registerDevice } from "../../utils/pushNotiications";
 import { eye, eyeOff } from "ionicons/icons";
+import { App as CapApp } from "@capacitor/app";
+import { Device } from "@capacitor/device";
 import {
   getRememberedUsername,
   isAuthenticated,
@@ -31,20 +32,46 @@ const Login: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginMessage, setLoginMessage] = useState("");
-  const app_version: any = localStorage.getItem("app_version");
-  const app_name: any = localStorage.getItem("app_name");
+  const [appVersion, setAppVersion] = useState(
+    () => localStorage.getItem("app_version") || ""
+  );
+  const app_name: any = localStorage.getItem("app_name") || "pest_control";
   const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isError, setIsError] = useState(false);
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
   const history = useHistory();
 
   useEffect(() => {
+    const resolveAppVersion = async () => {
+      try {
+        const info = await Device.getInfo();
+        if (info.platform === "ios" || info.platform === "android") {
+          const appInfos = await CapApp.getInfo();
+          const version = appInfos.version || "";
+          if (version) {
+            localStorage.setItem("app_version", version);
+            setAppVersion(version);
+            return;
+          }
+        } else {
+          localStorage.setItem("app_version", "web");
+          setAppVersion("web");
+          return;
+        }
+      } catch (error) {
+        console.error("Error resolving app version:", error);
+      }
+
+      const stored = localStorage.getItem("app_version");
+      if (stored) setAppVersion(stored);
+    };
+
     purgeLegacyCredentials();
+    resolveAppVersion();
 
     if (isAuthenticated()) {
       const checkInFlag = localStorage.getItem("checkInFlag");
@@ -82,7 +109,7 @@ const Login: React.FC = () => {
           username,
           password,
           app_name,
-          app_version
+          appVersion || localStorage.getItem("app_version") || "web"
         );
 
         const userData = data?.data?.[0];
@@ -122,7 +149,6 @@ const Login: React.FC = () => {
         setLoginMessage("");
       }, 2000);
     } else {
-      setIsError(true);
       setIsSubmitting(false);
       setLoading(false);
     }
@@ -154,84 +180,120 @@ const Login: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonContent fullscreen className="ion-login">
-        {loading && <IonProgressBar type="indeterminate" color="success" />}
-        <div className="loginwrapp">
-          <IonImg
-            className="loginLogo"
-            src={logo}
-            alt="logo"
-            style={{ height: "100px" }}
-          ></IonImg>
-          <IonText className="loginHeading">
-            <h1>Login</h1>
-            <p>Enter Email / Employee ID and Password</p>
-          </IonText>
-          <form onSubmit={handleLogin} autoComplete="on">
-            <IonLabel className="ion-label">Email / Employee ID</IonLabel>
-            <IonItem lines="none">
-              <IonInput
-                placeholder="Email"
-                value={username}
-                autocomplete="username"
-                onIonInput={handleUsernameChange}
-              />
-            </IonItem>
-            {usernameError && <IonText color="danger">{usernameError}</IonText>}
+    <IonPage className="loginPage">
+      <IonContent className="loginContent" fullscreen>
+        {loading && (
+          <IonProgressBar
+            className="loginProgress"
+            type="indeterminate"
+            color="primary"
+          />
+        )}
+        <div className="loginShell">
+          <div className="loginInner">
+            <div className="loginBrand">
+              <IonImg className="loginLogo" src={logo} alt="PSD logo" />
+              <h1 className="loginBrandMark">PSD Technician</h1>
+              <p className="loginBrandSub">
+                Field tools for pest control technicians
+              </p>
+            </div>
 
-            <IonLabel className="ion-label">Password</IonLabel>
-            <IonItem lines="none">
-              <IonInput
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={password}
-                autocomplete="current-password"
-                onIonInput={handlePasswordChange}
-                style={{ color: "black" }}
-              />
-              <IonIcon
-                slot="end"
-                icon={showPassword ? eye : eyeOff}
-                onClick={togglePasswordVisibility}
-                style={{ cursor: "pointer", marginRight: "10px" }}
-              />
-            </IonItem>
-            {passwordError && <IonText color="danger">{passwordError}</IonText>}
+            <div className="loginCard">
+              <div className="loginCardIntro">
+                <h2>Welcome back</h2>
+                <p>Sign in with your email or employee ID to continue.</p>
+              </div>
 
-            <IonText className="ion-Remember">
-              <IonCheckbox
-                className="ionCheckbox ion-float-left"
-                labelPlacement="end"
-                checked={rememberMe}
-                onIonChange={(e) => handleRememberMeChange(e.detail.checked)}
-              >
-                Remember Me
-              </IonCheckbox>
+              <form onSubmit={handleLogin} autoComplete="on">
+                <div className="loginField">
+                  <label className="loginLabel" htmlFor="login-username">
+                    Email / Employee ID
+                  </label>
+                  <div className="loginControl">
+                    <IonInput
+                      id="login-username"
+                      placeholder="Enter email or employee ID"
+                      value={username}
+                      autocomplete="username"
+                      onIonInput={handleUsernameChange}
+                    />
+                  </div>
+                  {usernameError ? (
+                    <IonText className="loginError">{usernameError}</IonText>
+                  ) : null}
+                </div>
+
+                <div className="loginField">
+                  <label className="loginLabel" htmlFor="login-password">
+                    Password
+                  </label>
+                  <div className="loginControl hasToggle">
+                    <IonInput
+                      id="login-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter password"
+                      value={password}
+                      autocomplete="current-password"
+                      onIonInput={handlePasswordChange}
+                    />
+                    <IonButton
+                      type="button"
+                      fill="clear"
+                      className="loginToggle"
+                      onClick={togglePasswordVisibility}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      <IonIcon icon={showPassword ? eye : eyeOff} />
+                    </IonButton>
+                  </div>
+                  {passwordError ? (
+                    <IonText className="loginError">{passwordError}</IonText>
+                  ) : null}
+                </div>
+
+                <div className="loginRow">
+                  <IonCheckbox
+                    className="loginRemember"
+                    labelPlacement="end"
+                    checked={rememberMe}
+                    onIonChange={(e) =>
+                      handleRememberMeChange(e.detail.checked)
+                    }
+                  >
+                    Remember me
+                  </IonCheckbox>
+                </div>
+
+                <IonButton
+                  type="submit"
+                  className="ion-button loginSubmit"
+                  fill="solid"
+                  expand="block"
+                  color="primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Signing in…" : "Sign In"}
+                </IonButton>
+              </form>
+
+              {loginMessage ? (
+                <IonText
+                  className={`loginAlert${
+                    loginMessage === "Logged in successfully" ? " isSuccess" : ""
+                  }`}
+                >
+                  {loginMessage}
+                </IonText>
+              ) : null}
+            </div>
+
+            <IonText className="loginVersion">
+              <p>App Version {appVersion || "…"}</p>
             </IonText>
-            <IonButton
-              type="submit"
-              className="ion-button"
-              slot="primary"
-              fill="solid"
-              expand="block"
-              disabled={isSubmitting}
-            >
-              Login
-            </IonButton>
-          </form>
-          {loginMessage && (
-            <IonText
-              color={
-                loginMessage === "Logged in successfully" ? "success" : "danger"
-              }
-            >
-              {loginMessage}
-            </IonText>
-          )}
-          <IonText className="loginVersion">
-            <p>App Version &nbsp;{app_version}</p>
-          </IonText>
+          </div>
         </div>
       </IonContent>
     </IonPage>

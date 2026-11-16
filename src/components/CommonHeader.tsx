@@ -59,39 +59,27 @@ const CommonHeader: React.FC<any> = ({
   }, []);
 
   return (
-    <>
-      <IonHeader
-        translate="yes"
-        className="ion-no-border ion-padding-horizontal"
-      >
-        <IonToolbar>
-          <IonButtons slot="start" className="ion-no-padding">
-            <IonButton onClick={handleBackClick}>
-              <CustomBackButton />
+    <IonHeader className="ion-no-border appPageHeader">
+      <IonToolbar>
+        <IonButtons slot="start">
+          <IonButton onClick={handleBackClick}>
+            <CustomBackButton />
+          </IonButton>
+        </IonButtons>
+        <IonTitle slot="start">{pageTitle}</IonTitle>
+        {showIcons ? (
+          <IonButtons slot="end" className="headerBts">
+            <IonButton shape="round" routerLink="/">
+              <IonImg src="assets/images/home-outline-icon.svg" />
             </IonButton>
-            {/* <IonBackButton defaultHref={backToPath}></IonBackButton> */}
-            {/* <CustomBackButton onClick={goBack} path={backToPath} /> */}
+            <NotificationLength />
+            <IonButton shape="round" routerLink="/profile">
+              <IonImg src="assets/images/account-user.svg" />
+            </IonButton>
           </IonButtons>
-          <IonTitle className="ion-float-start">{pageTitle}</IonTitle>
-          {showIcons ? (
-            <div className="ion-float-end headerBts">
-              <IonButton shape="round" routerLink={"/"}>
-                <IonImg src="assets/images/home-outline-icon.svg" />
-              </IonButton>
-            
-             <NotificationLength/>
-
-              <IonButton shape="round" routerLink={"/profile"}>
-                <IonImg src="assets/images/account-user.svg" />
-              </IonButton>
-             
-            </div>
-          ) : (
-            ""
-          )}
-        </IonToolbar>
-      </IonHeader>
-    </>
+        ) : null}
+      </IonToolbar>
+    </IonHeader>
   );
 };
 

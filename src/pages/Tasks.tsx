@@ -414,84 +414,72 @@ const Tasks: React.FC = () => {
         pageTitle={"Tasks"}
         showIcons={true}
       />
-      <IonContent
-        fullscreen
-        className="dashboardWrapp ionContentColor ion-padding-horizontal"
-      >
+      <IonContent className="dashboardWrapp ionContentColor ion-padding-horizontal">
         {loading && <IonProgressBar type="indeterminate" />}
-        <IonSegment
-          className="stockIonSegmentButton"
-          value={selectedSegment}
-          onIonChange={(e) => {
-            const value = e.detail.value as string;
-            setSelectedSegment(value);
-            setPage(0);
-            if (value === 'pendingSegment') {
-              setSelectedStatus("ROUTINE_ON_GOING | ROUTINE_PENDING");
-              segmentChange("ROUTINE_ON_GOING | ROUTINE_PENDING");
-
-            }
-            if (value === 'pausedSegment') {
-              setSelectedStatus("ROUTINE_PAUSED");
-              segmentChange("ROUTINE_PAUSED");
-            }
-            if (value === 'expiredSegment') {
-              setSelectedStatus("ROUTINE_EXPIRED");
-              segmentChange("ROUTINE_EXPIRED");
-            }
-          }}
-        >
-          <IonSegmentButton value="pendingSegment">
-            <IonLabel>
-              Pending{" "}
-              <IonBadge slot="start">
-                {" "}
-                {pendingOngoingCount}
-              </IonBadge>
-            </IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="pausedSegment">
-            <IonLabel>
-              Paused{" "}
-              <IonBadge slot="start">
-                {pausedCount}
-              </IonBadge>
-            </IonLabel>
-          </IonSegmentButton>
-
-          <IonSegmentButton value="expiredSegment">
-            <IonLabel>
-              Expired{" "}
-              <IonBadge slot="start">
-                {" "}
-                {expiredCount}
-              </IonBadge>
-            </IonLabel>
-          </IonSegmentButton>
-        </IonSegment>
+        <div className="tasksStatusTabsWrap">
+          <IonSegment
+            mode="md"
+            className="tasksStatusTabs"
+            value={selectedSegment}
+            scrollable={false}
+            onIonChange={(e) => {
+              const value = e.detail.value as string;
+              setSelectedSegment(value);
+              setPage(0);
+              if (value === "pendingSegment") {
+                setSelectedStatus("ROUTINE_ON_GOING | ROUTINE_PENDING");
+                segmentChange("ROUTINE_ON_GOING | ROUTINE_PENDING");
+              }
+              if (value === "pausedSegment") {
+                setSelectedStatus("ROUTINE_PAUSED");
+                segmentChange("ROUTINE_PAUSED");
+              }
+              if (value === "expiredSegment") {
+                setSelectedStatus("ROUTINE_EXPIRED");
+                segmentChange("ROUTINE_EXPIRED");
+              }
+            }}
+          >
+            <IonSegmentButton value="pendingSegment" className="tasksTab pending">
+              <div className="tasksTabInner">
+                <span className="tasksTabLabel">Pending</span>
+                <IonBadge className="tasksTabBadge">{pendingOngoingCount}</IonBadge>
+              </div>
+            </IonSegmentButton>
+            <IonSegmentButton value="pausedSegment" className="tasksTab paused">
+              <div className="tasksTabInner">
+                <span className="tasksTabLabel">Paused</span>
+                <IonBadge className="tasksTabBadge">{pausedCount}</IonBadge>
+              </div>
+            </IonSegmentButton>
+            <IonSegmentButton value="expiredSegment" className="tasksTab expired">
+              <div className="tasksTabInner">
+                <span className="tasksTabLabel">Expired</span>
+                <IonBadge className="tasksTabBadge">{expiredCount}</IonBadge>
+              </div>
+            </IonSegmentButton>
+          </IonSegment>
+        </div>
         <div>
           {selectedSegment === "pendingSegment" && (
             <div>
-              <IonItem
-                lines="none"
-                className="ion-item-inner ion-no-padding ion-margin-vertical"
-              >
+              <div className="tasksSearchBar">
                 <IonSearchbar
                   ref={searchInputRef}
+                  className="tasksSearchInput"
                   debounce={500}
+                  placeholder="Search tasks"
                   onIonInput={handleInput}
-                ></IonSearchbar>
-
-                <div className="ion-float_end">
-                  <IonButton
-                    shape="round"
-                    onClick={() => setIsOpen(true)}
-                    className="roundedWhiteBtIcon ion-no-margin"
-                  >
-                    <IonImg src="assets/images/filter-icon.svg"></IonImg>
-                  </IonButton>
-                </div>
-              </IonItem>
+                />
+                <IonButton
+                  shape="round"
+                  onClick={() => setIsOpen(true)}
+                  className="tasksFilterBtn"
+                  aria-label="Filter tasks"
+                >
+                  <IonImg src="assets/images/filter-icon.svg" />
+                </IonButton>
+              </div>
 
               <IonList lines="none" className="ion-list-item">
                 {!loading &&
@@ -515,29 +503,30 @@ const Tasks: React.FC = () => {
                   filteredTaskData.map((task: any, index: any) => (
                     <IonItem
                       key={task.id}
+                      button
+                      detail={false}
+                      className="taskListItem"
                       onClick={() =>
                         handleTaskClick(task.id, index, task.service_status)
                       }
-                      lines="full"
+                      lines="none"
                     >
-                      <div className="task-container">
-                        <TaskComponent
-                          id={task.id}
-                          path={`/tasks/${task.id}`}
-                          title={task.service_name}
-                          subTitle={task.address}
-                          serviceDate={task.service_date}
-                          date={`${formatDate(task.created_on)}  ${formatTime(
-                            task.created_on
-                          )}`}
-                          time={task.preffered_time}
-                          reference_Number={task.reference_number}
-                          priority={task.priority}
-                          distance={task.distance}
-                          status={task.service_status}
-                          imgSrc="/assets/images/location-icon.svg"
-                        />
-                      </div>
+                      <TaskComponent
+                        id={task.id}
+                        path={`/tasks/${task.id}`}
+                        title={task.service_name}
+                        subTitle={task.address}
+                        serviceDate={task.service_date}
+                        date={`${formatDate(task.created_on)}  ${formatTime(
+                          task.created_on
+                        )}`}
+                        time={task.preffered_time}
+                        reference_Number={task.reference_number}
+                        priority={task.priority}
+                        distance={task.distance}
+                        status={task.service_status}
+                        imgSrc="/assets/images/location-icon.svg"
+                      />
                     </IonItem>
                   ))}
               </IonList>
@@ -545,26 +534,23 @@ const Tasks: React.FC = () => {
           )}
           {selectedSegment === "pausedSegment" && (
             <div>
-              <IonItem
-                lines="none"
-                className="ion-item-inner ion-no-padding ion-margin-vertical"
-              >
+              <div className="tasksSearchBar">
                 <IonSearchbar
                   ref={searchInputRef}
+                  className="tasksSearchInput"
                   debounce={500}
+                  placeholder="Search tasks"
                   onIonInput={handleInput}
-                ></IonSearchbar>
-
-                <div className="ion-float_end">
-                  <IonButton
-                    shape="round"
-                    onClick={() => setIsOpen(true)}
-                    className="roundedWhiteBtIcon ion-no-margin"
-                  >
-                    <IonImg src="assets/images/filter-icon.svg"></IonImg>
-                  </IonButton>
-                </div>
-              </IonItem>
+                />
+                <IonButton
+                  shape="round"
+                  onClick={() => setIsOpen(true)}
+                  className="tasksFilterBtn"
+                  aria-label="Filter tasks"
+                >
+                  <IonImg src="assets/images/filter-icon.svg" />
+                </IonButton>
+              </div>
 
               <IonList lines="none" className="ion-list-item">
                 {!loading && filteredTaskData.length === 0 && (
@@ -576,29 +562,30 @@ const Tasks: React.FC = () => {
                   filteredTaskData.map((task: any, index: any) => (
                     <IonItem
                       key={task.id}
+                      button
+                      detail={false}
+                      className="taskListItem"
                       onClick={() =>
                         handleTaskClick(task.id, index, task.service_status)
                       }
-                      lines="full"
+                      lines="none"
                     >
-                      <div className="task-container">
-                        <TaskComponent
-                          id={task.id}
-                          path={`/tasks/${task.id}`}
-                          title={task.service_name}
-                          subTitle={task.address}
-                          serviceDate={task.service_date}
-                          date={`${formatDate(task.created_on)}  ${formatTime(
-                            task.created_on
-                          )}`}
-                          time={task.preffered_time}
-                          reference_Number={task.reference_number}
-                          priority={task.priority}
-                          distance={task.distance}
-                          status={task.service_status}
-                          imgSrc="/assets/images/location-icon.svg"
-                        />
-                      </div>
+                      <TaskComponent
+                        id={task.id}
+                        path={`/tasks/${task.id}`}
+                        title={task.service_name}
+                        subTitle={task.address}
+                        serviceDate={task.service_date}
+                        date={`${formatDate(task.created_on)}  ${formatTime(
+                          task.created_on
+                        )}`}
+                        time={task.preffered_time}
+                        reference_Number={task.reference_number}
+                        priority={task.priority}
+                        distance={task.distance}
+                        status={task.service_status}
+                        imgSrc="/assets/images/location-icon.svg"
+                      />
                     </IonItem>
                   ))}
               </IonList>
@@ -606,26 +593,23 @@ const Tasks: React.FC = () => {
           )}
           {selectedSegment === "expiredSegment" && (
             <div>
-              <IonItem
-                lines="none"
-                className="ion-item-inner ion-no-padding ion-margin-vertical"
-              >
+              <div className="tasksSearchBar">
                 <IonSearchbar
                   ref={searchInputRef}
+                  className="tasksSearchInput"
                   debounce={500}
+                  placeholder="Search tasks"
                   onIonInput={handleInput}
-                ></IonSearchbar>
-
-                <div className="ion-float_end">
-                  <IonButton
-                    shape="round"
-                    onClick={() => setIsOpen(true)}
-                    className="roundedWhiteBtIcon ion-no-margin"
-                  >
-                    <IonImg src="assets/images/filter-icon.svg"></IonImg>
-                  </IonButton>
-                </div>
-              </IonItem>
+                />
+                <IonButton
+                  shape="round"
+                  onClick={() => setIsOpen(true)}
+                  className="tasksFilterBtn"
+                  aria-label="Filter tasks"
+                >
+                  <IonImg src="assets/images/filter-icon.svg" />
+                </IonButton>
+              </div>
 
               <IonList lines="none" className="ion-list-item">
                 {!loading && filteredTaskData.length === 0 && (
@@ -634,32 +618,28 @@ const Tasks: React.FC = () => {
                   </p>
                 )}
                 {filteredTaskData.length > 0 &&
-                  filteredTaskData.map((task: any, index: any) => (
+                  filteredTaskData.map((task: any) => (
                     <IonItem
                       key={task.id}
-                      // onClick={() =>
-                      //   handleTaskClick(task.id, index, task.service_status)
-                      // }
-                      lines="full"
+                      detail={false}
+                      className="taskListItem"
+                      lines="none"
                     >
-                      <div className="task-container">
-                        <TaskComponent
-                          id={task.id}
-                          //path={`/tasks/${task.id}`}
-                          title={task.service_name}
-                          subTitle={task.address}
-                          serviceDate={task.service_date}
-                          date={`${formatDate(task.created_on)}  ${formatTime(
-                            task.created_on
-                          )}`}
-                          time={task.preffered_time}
-                          reference_Number={task.reference_number}
-                          priority={task.priority}
-                          distance={task.distance}
-                          status={task.service_status}
-                          imgSrc="/assets/images/location-icon.svg"
-                        />
-                      </div>
+                      <TaskComponent
+                        id={task.id}
+                        title={task.service_name}
+                        subTitle={task.address}
+                        serviceDate={task.service_date}
+                        date={`${formatDate(task.created_on)}  ${formatTime(
+                          task.created_on
+                        )}`}
+                        time={task.preffered_time}
+                        reference_Number={task.reference_number}
+                        priority={task.priority}
+                        distance={task.distance}
+                        status={task.service_status}
+                        imgSrc="/assets/images/location-icon.svg"
+                      />
                     </IonItem>
                   ))}
               </IonList>

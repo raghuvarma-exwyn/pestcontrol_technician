@@ -2,17 +2,16 @@ import {
   IonButton,
   IonContent,
   IonFooter,
-  IonItem,
-  IonList,
+  IonPage,
   IonText,
-  IonLabel,
   IonInput,
   IonToolbar,
   IonSelect,
   IonSelectOption,
   IonDatetime,
-  IonProgressBar,
+  IonBadge,
 } from "@ionic/react";
+import "./FeedbackFollowup.css";
 import { useHistory } from "react-router";
 import CommonHeader from "../components/CommonHeader";
 import { useEffect, useState, useRef } from "react";
@@ -20,17 +19,10 @@ import CustomerSignature from "../components/CustomerSignature";
 import TechnicianSignature from "../components/TechnicianSignature";
 import swal from "sweetalert";
 import useLongitudeLocation from "../components/useLongitudeLocation";
-import {
-  ProgressStatus,
-  updateTaskStatus,
-} from "../data/localstorage/taskStatusStorage";
 import { saveFeedBackBasedOnNetwork } from "../data/offline/entity/DataTransfer";
-import { toast } from "react-toastify";
-
 import { toZonedTime, format } from "date-fns-tz";
 import { useForm } from "react-hook-form";
 import moment from "moment-timezone";
-
 
 const formatToUaeTime = (dateTime: any) => {
   const uaeTimeZone = "Asia/Dubai";
@@ -61,9 +53,8 @@ const FeedbackFollowup: React.FC = () => {
   );
   const [submitting, setSubmitting] = useState(false);
   const [userData, setUserData] = useState<any>(null);
-  const [showModal, setShowModal] = useState<boolean>(false);
   const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
-  const { clearErrors, reset } = useForm();
+  const { clearErrors } = useForm();
   const [isCustomerSignatureSaved, setIsCustomerSignatureSaved] =
     useState<boolean>(false);
   const [isTechnicianSignatureSaved, setIsTechnicianSignatureSaved] =
@@ -71,6 +62,7 @@ const FeedbackFollowup: React.FC = () => {
 
   const customerSignatureRef = useRef<any>(null);
   const technicianSignatureRef = useRef<any>(null);
+
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -94,17 +86,15 @@ const FeedbackFollowup: React.FC = () => {
       console.error("User Data is not available");
     }
   };
+
   useEffect(() => {
     const uaeCurrentTime = moment
       .tz("Asia/Dubai")
       .format("YYYY-MM-DDTHH:mm:ss");
     setFollowUpDate(uaeCurrentTime);
-  }, []);
+  }, []);
 
   const history = useHistory();
-  const goBack = () => {
-    history.goBack();
-  };
 
   const taskId = localStorage.getItem("activeTaskData");
   if (!taskId) {
@@ -114,8 +104,7 @@ const FeedbackFollowup: React.FC = () => {
 
   const handleSubmit = async () => {
     setFormSubmitted(true);
-  
-    // Validate required fields
+
     if (
       !feedback ||
       !customerSignature ||
@@ -124,19 +113,16 @@ const FeedbackFollowup: React.FC = () => {
       (followUpRequired === "Yes" && !followUpDate)
     ) {
       console.error("Please fill in all the required fields");
-      return; // Stop execution if validation fails
-    }
-  
-    // Check if customer signature is provided if form is already submitted
-    if (formSubmitted && !customerSignature) {
-      console.error("Please provide customer signature");
-      return; // Stop execution if validation fails
+      return;
     }
 
-    // Proceed with submission
-    setSubmitting(true); // Show loader
+    if (formSubmitted && !customerSignature) {
+      console.error("Please provide customer signature");
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      // Prepare request body
       const requestBody = {
         visit_id: activeTaskData.id,
         customer_feedback: feedback,
@@ -152,8 +138,7 @@ const FeedbackFollowup: React.FC = () => {
         visit_completed: completedDate || "",
         date_time: formatToUaeTime(new Date()),
       };
-  
-      // Call API to save feedback
+
       const responseData = await saveFeedBackBasedOnNetwork(
         requestBody.visit_id,
         requestBody.customer_feedback,
@@ -167,25 +152,18 @@ const FeedbackFollowup: React.FC = () => {
         requestBody.visit_completed,
         requestBody.date_time
       );
-  
-      // Handle successful response
+
       console.log(responseData);
-  
-     // updateTaskStatus("", "feedBack", ProgressStatus.done); 
-      swal("Success", "Task completed successfully!", "success").then(()=>{history.push("/tasks");});
-      
+
+      swal("Success", "Task completed successfully!", "success").then(() => {
+        history.push("/tasks");
+      });
     } catch (error) {
-      // Handle errors
       console.error("Error submitting form:", error);
-      // toast.error("Server not responding. Please try again later.");
     } finally {
-      setSubmitting(false); // Hide loader
+      setSubmitting(false);
     }
   };
-  
-
-  console.log(customerSignature, "Customer URl");
-  console.log(technicianSignature, "Technician URl");
 
   const getCurrentDateTime = (): string => {
     const currentDate = new Date();
@@ -197,25 +175,9 @@ const FeedbackFollowup: React.FC = () => {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
-  const getCurrentDateTimeUAE = (): string => {
-    const now = new Date();
-    const utcOffset = now.getTimezoneOffset();
-    const uaeOffset = 4 * 60;
-    const totalOffset = utcOffset + uaeOffset;
-    const uaeTime = new Date(now.getTime() + totalOffset * 60000);
-    return uaeTime.toISOString().slice(0, 16);
-  };
-
   const onFollowUpDateChange = (newFollowUpDateTime: any) => {
     const formattedDateTime = newFollowUpDateTime.replace("T", " ");
     setFollowUpDate(formattedDateTime);
-    console.log("new follow up date time", newFollowUpDateTime);
-  };
-
-  const onCompletedDateChange = (newCompletedDateTime: any) => {
-    const formattedDateTime = newCompletedDateTime.replace("T", " ");
-    setCompletedDate(formattedDateTime);
-    console.log("Completed Date and Time", newCompletedDateTime);
   };
 
   const handleCancel = () => {
@@ -225,7 +187,6 @@ const FeedbackFollowup: React.FC = () => {
       buttons: ["Cancel", "OK"],
     }).then((willReset) => {
       if (willReset) {
-        // Reset form fields and errors
         setFeedback(initialFormState.feedback);
         setCustomerSignature(initialFormState.customerSignature);
         setTechnicianSignature(initialFormState.technicianSignature);
@@ -234,15 +195,12 @@ const FeedbackFollowup: React.FC = () => {
         setFollowUpDate(initialFormState.followUpDate);
         setCompletedDate(initialFormState.completedDate);
 
-        // Clear form errors explicitly
         clearErrors();
-        setFormSubmitted(false)
+        setFormSubmitted(false);
 
-        // Reset signature saved states
         setIsCustomerSignatureSaved(false);
         setIsTechnicianSignatureSaved(false);
 
-        // Clear signatures using ref methods
         if (customerSignatureRef.current) {
           customerSignatureRef.current.clearSignature();
         }
@@ -254,133 +212,166 @@ const FeedbackFollowup: React.FC = () => {
   };
 
   return (
-    <>
+    <IonPage className="feedbackPage">
       <CommonHeader
         backToPath={"/taskexecution"}
         pageTitle={"Feedback/Follow up"}
         showIcons={false}
       />
-      <IonContent fullscreen className="ionContentColor">
-        <div className="ion-padding-horizontal ion-padding-vertical ionPaddingBottom">
-          <IonText>
-            <h1 className="headingH1">Please update the form</h1>
-          </IonText>
-          <IonList className="formlist">
-            <IonItem lines="none">
-              <div className="width100">
-                <IonLabel className="ion-label">
-                  Customer Feedback<IonText>*</IonText>
-                </IonLabel>
+      <IonContent className="ionContentColor feedbackContent">
+        <div className="feedbackInner">
+          <div className="feedbackIntro">
+            <h1>Feedback & follow-up</h1>
+            <p>Capture customer feedback, signatures, and follow-up needs.</p>
+          </div>
+
+          <div className="ffuCard">
+            <div className="ffuCardHeader">
+              <h2>Customer feedback</h2>
+              <p>Rating and optional notes</p>
+            </div>
+
+            <div className="ffuField">
+              <label className="ffuLabel">
+                Customer Feedback<span className="pafRequired">*</span>
+              </label>
+              <div className="pafControl ffuControl">
                 <IonSelect
                   placeholder="Select"
-                  fill="outline"
+                  interface="popover"
                   value={feedback}
-                  onIonChange={(e:CustomEvent) => setFeedback(e.detail.value ?? "")}
-                  style={{ height: "55px" }}
+                  onIonChange={(e: CustomEvent) =>
+                    setFeedback(e.detail.value ?? "")
+                  }
                 >
                   <IonSelectOption value="Very Good">Very Good</IonSelectOption>
                   <IonSelectOption value="Good">Good</IonSelectOption>
                   <IonSelectOption value="Satisfied">Satisfied</IonSelectOption>
                 </IonSelect>
               </div>
-            </IonItem>
-            {formSubmitted && feedback === "" && (
-              <IonText color="danger">Please select customer feedback</IonText>
-            )}
-            <IonItem>
+              {formSubmitted && !feedback && (
+                <IonBadge color="danger" className="ffuError">
+                  Please select customer feedback
+                </IonBadge>
+              )}
+            </div>
+
+            <div className="ffuField">
+              <label className="ffuLabel">Feedback Details</label>
+              <div className="pafControl ffuControl">
+                <IonInput
+                  aria-label="Feedback details"
+                  placeholder="Add notes (optional)"
+                  value={feedbackDetails}
+                  onIonChange={(e: CustomEvent) =>
+                    setFeedbackDetails(e.detail.value ?? "")
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="ffuCard">
+            <div className="ffuCardHeader">
+              <h2>Signatures</h2>
+              <p>Customer and technician confirmation</p>
+            </div>
+
+            <div className="ffuSigBlock">
               <CustomerSignature
-                ref={customerSignatureRef} // Attach ref
+                ref={customerSignatureRef}
                 setCustomerSignature={(signature) => {
                   setCustomerSignature(signature);
                   setIsCustomerSignatureSaved(true);
                 }}
               />
-            </IonItem>
-            {formSubmitted && !customerSignature && (
-              <IonText color="danger">
-                Please provide customer signature and save it.
-              </IonText>
-            )}
-            <IonItem>
+              {formSubmitted && !customerSignature && (
+                <IonBadge color="danger" className="ffuError">
+                  Please provide customer signature and save it.
+                </IonBadge>
+              )}
+            </div>
+
+            <div className="ffuSigBlock">
               <TechnicianSignature
-                ref={technicianSignatureRef} // Attach ref
+                ref={technicianSignatureRef}
                 setTechnicianSignature={(signature: any) => {
                   setTechnicianSignature(signature);
                   setIsTechnicianSignatureSaved(true);
                 }}
               />
-            </IonItem>
-            {formSubmitted && !technicianSignature && (
-              <IonText color="danger">
-                Please provide technician signature and save it.
-              </IonText>
-            )}
-            <IonItem lines="none">
-              <div className="width100">
-                <IonLabel className="ion-label">Feedback Details</IonLabel>
-                <IonInput
-                  aria-label="Text"
-                  fill="outline"
-                  placeholder=""
-                  value={feedbackDetails}
-                  onIonChange={(e:CustomEvent) => setFeedbackDetails(e.detail.value ?? "")}
-                  // disabled={
-                  //   !isCustomerSignatureSaved || !isTechnicianSignatureSaved
-                  // }
-                ></IonInput>
-              </div>
-            </IonItem>
-            <IonItem lines="none">
-              <div className="width100">
-                <IonLabel className="ion-label">
-                  Follow-up Required <IonText>*</IonText>
-                </IonLabel>
+              {formSubmitted && !technicianSignature && (
+                <IonBadge color="danger" className="ffuError">
+                  Please provide technician signature and save it.
+                </IonBadge>
+              )}
+            </div>
+          </div>
+
+          <div className="ffuCard">
+            <div className="ffuCardHeader">
+              <h2>Follow-up</h2>
+              <p>Schedule next visit if needed</p>
+            </div>
+
+            <div className="ffuField">
+              <label className="ffuLabel">
+                Follow-up Required<span className="pafRequired">*</span>
+              </label>
+              <div className="pafControl ffuControl">
                 <IonSelect
                   placeholder="Select"
-                  fill="outline"
+                  interface="popover"
                   value={followUpRequired}
-                  onIonChange={(e:CustomEvent) => setFollowUpRequired(e.detail.value ?? "")}
-                  style={{ height: "55px" }}
+                  onIonChange={(e: CustomEvent) =>
+                    setFollowUpRequired(e.detail.value ?? "")
+                  }
                 >
                   <IonSelectOption value="Yes">Yes</IonSelectOption>
                   <IonSelectOption value="No">No</IonSelectOption>
                 </IonSelect>
               </div>
-            </IonItem>
-            {formSubmitted && !followUpRequired && (
-              <IonText color="danger">
-                Please select follow-up requirement
-              </IonText>
-            )}
+              {formSubmitted && !followUpRequired && (
+                <IonBadge color="danger" className="ffuError">
+                  Please select follow-up requirement
+                </IonBadge>
+              )}
+            </div>
+
             {followUpRequired === "Yes" && (
-              <IonItem lines="none">
-                <div className="width100">
-                  <IonLabel className="ion-label">Follow-up Date</IonLabel>
-                  <IonDatetime
-                    value={followUpDate || getCurrentDateTime()}
-                    min={moment().tz("Asia/Dubai").format("YYYY-MM-DDTHH:mm:ss")}
-                    display-format="YYYY-MM-DDTHH:mm"
-                    onIonChange={(e: CustomEvent) =>
-                      onFollowUpDateChange(e.detail.value ?? "")
-                    }
-                  ></IonDatetime>
-                </div>
-              </IonItem>
+              <div className="ffuField">
+                <label className="ffuLabel">
+                  Follow-up Date<span className="pafRequired">*</span>
+                </label>
+                <IonDatetime
+                  className="ffuDatetime"
+                  presentation="date-time"
+                  value={followUpDate || getCurrentDateTime()}
+                  min={moment().tz("Asia/Dubai").format("YYYY-MM-DDTHH:mm:ss")}
+                  onIonChange={(e: CustomEvent) =>
+                    onFollowUpDateChange(e.detail.value ?? "")
+                  }
+                />
+                {formSubmitted && !followUpDate && (
+                  <IonBadge color="danger" className="ffuError">
+                    Please select follow-up date
+                  </IonBadge>
+                )}
+              </div>
             )}
-            {followUpRequired === "Yes" && formSubmitted && !followUpDate && (
-              <IonText color="danger">Please select follow-up date</IonText>
-            )}
-          </IonList>
+          </div>
         </div>
       </IonContent>
-      <div>
-        <IonFooter className="ion-footer">
-          <IonToolbar className="ionFooterTwoButtons">
+
+      <IonFooter className="ion-footer">
+        <IonToolbar>
+          <div className="footerTwoBtnRow">
             <IonButton
               className="ion-button"
               fill="outline"
               color="medium"
               onClick={handleCancel}
+              disabled={submitting}
             >
               Reset
             </IonButton>
@@ -388,14 +379,14 @@ const FeedbackFollowup: React.FC = () => {
               className="ion-button"
               color="primary"
               onClick={handleSubmit}
+              disabled={submitting}
             >
-              Submit
+              {submitting ? "Submitting…" : "Submit"}
             </IonButton>
-          </IonToolbar>
-        </IonFooter>
-      </div>
-      {/* <FullScreenLoader isLoading={submitting} /> */}
-    </>
+          </div>
+        </IonToolbar>
+      </IonFooter>
+    </IonPage>
   );
 };
 

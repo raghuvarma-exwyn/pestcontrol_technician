@@ -176,24 +176,34 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <>
-      <IonHeader className="ion-no-border ion-padding-horizontal dashboardHeader">
+    <IonPage>
+      <IonHeader className="ion-no-border dashboardHeader appPageHeader">
         <IonToolbar>
-          <IonImg
-            className="dashboardlogo ion-float-start"
-            src="assets/images/psd-logo.svg"
-          />
-          <div className="ion-float-end headerBts">
-            <NotificationLength />
-            <IonButton shape="round" routerLink={"/profile"}>
-              <IonImg src="assets/images/account-user.svg" />
-            </IonButton>
+          <div className="dashboardHeaderBar">
+            <IonImg
+              className="dashboardlogo"
+              src="assets/images/psd-logo.svg"
+              alt="PSD logo"
+            />
+            <div className="headerBts">
+              <NotificationLength />
+              <IonButton
+                shape="round"
+                fill="solid"
+                color="light"
+                className="dashboardHeaderBtn"
+                routerLink={"/profile"}
+                aria-label="Profile"
+              >
+                <IonImg src="assets/images/account-user.svg" />
+              </IonButton>
+            </div>
           </div>
         </IonToolbar>
       </IonHeader>
-      <IonContent className="dashboardWrapp ionContentColor ion-padding-horizontal ">
+      <IonContent className="dashboardWrapp ionContentColor ion-padding-horizontal">
         <IonText className="welcomeText">
-          <h2>Welcome !</h2>
+          <h2>Welcome</h2>
           <h1>Technician Dashboard</h1>
         </IonText>
         <div className="totalTasks">
@@ -232,7 +242,7 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="homeList">
           <IonText className="headingWithLines ion-text-center ion-padding-end">
-            <h4>Other Actions</h4>
+            <h4>Quick Actions</h4>
           </IonText>
           <IonRow>
             {menuList.length > 0
@@ -255,18 +265,17 @@ const Dashboard: React.FC = () => {
               : "No Data"}
           </IonRow>
         </div>
-        <IonText className='loginVersion'>
-          <p>App Version &nbsp;{app_version}</p>
+        <IonText className="loginVersion">
+          <p>App Version {app_version}</p>
         </IonText>
       </IonContent>
       <IonFooter className="ion-footer ion-no-border">
         <IonToolbar className="ion-text-center checkInFooter">
           <IonItem lines="none">
-            <IonImg src="assets/images/time-icon.svg"></IonImg>
+            <IonImg src="assets/images/time-icon.svg" />
             <IonText>
               <NetworkCheckTime />
             </IonText>
-
           </IonItem>
         </IonToolbar>
       </IonFooter>
@@ -294,12 +303,13 @@ const Dashboard: React.FC = () => {
           {
             text: "Yes",
             handler: () => {
-              handleConfirmSync(true), setShowAlert(false);
+              handleConfirmSync(true);
+              setShowAlert(false);
             },
           },
         ]}
       />
-    </>
+    </IonPage>
   );
 };
 

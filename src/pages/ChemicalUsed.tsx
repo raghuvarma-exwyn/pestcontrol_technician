@@ -814,40 +814,36 @@ const ChemicalUsed = () => {
  
 
   return (
-    <IonPage>
+    <IonPage className="chemicalUsedPage">
       <ToastContainer />
-      <IonHeader
-        translate="yes"
-        className="ion-no-border ion-padding-horizontal"
-      >
+      <IonHeader className="ion-no-border appPageHeader">
         <IonToolbar>
-          <IonButtons slot="start" className="ion-no-padding">
+          <IonButtons slot="start">
             <IonButton routerLink="/pestactivityfound" onClick={handleCancel}>
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
-
-          <IonTitle className="ion-float-start">Chemical Used</IonTitle>
-
-          <div className="ion-float-end headerBts">
+          <IonTitle slot="start">Chemical Used</IonTitle>
+          <IonButtons slot="end" className="headerBts">
             <IonButton
               shape="round"
               onClick={navigateToTaskPreviewChemicalsection}
+              aria-label="Preview"
             >
               <IonImg src="/assets/images/preview-icon.svg" />
             </IonButton>
-          </div>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
       {loading && (
         <IonToolbar>
-          <IonProgressBar type="indeterminate"></IonProgressBar>
+          <IonProgressBar type="indeterminate" />
         </IonToolbar>
       )}
 
-      <IonContent fullscreen className="ionContentColor">
-        <div className="ion-padding-horizontal ionPaddingBottom">
+      <IonContent className="ionContentColor chemicalUsedContent">
+        <div className="chemicalUsedInner">
           {filteredPestActivityArray?.map((data: any, index: number) => (
             <IonAccordionGroup
               key={index}
@@ -875,54 +871,44 @@ const ChemicalUsed = () => {
                 </IonItem>
 
                 <div className="accContent" slot="content">
-                  <IonLabel className="ion-label">
-                    Do u want to add Chemicals? <IonText>*</IonText>
-                  </IonLabel>
-
-                  {selectedOptions[index] === "Yes" ? (
-                    // <div className="ion-padding-start">
-                    <IonButton
-                      className="ion-float-end addIcon"
-                      fill="outline"
-                      style={{ marginBotton: "120px" }}
-                      size="small"
-                      color="white"
-                      onClick={(e) => onAddItemClick(index)}
-                    >
-                      <IonIcon icon={add}></IonIcon> Add
-                    </IonButton>
-                  ) : (
-                    //  </div>
-                    data.usage.length > 0 && (
-                      <IonButton
-                        className="ion-float-end addIcon"
-                        fill="outline"
-                        style={{ marginBotton: "120px" }}
-                        size="small"
-                        color="white"
-                        onClick={(e) => onAddItemClick(index)}
+                  <div className="chemField">
+                    <div className="chemFieldHeader">
+                      <label className="chemLabel">
+                        Do you want to add Chemicals?
+                        <span className="pafRequired">*</span>
+                      </label>
+                      {selectedOptions[index] === "Yes" ||
+                      data.usage.length > 0 ? (
+                        <IonButton
+                          className="addIcon"
+                          fill="solid"
+                          size="small"
+                          onClick={() => onAddItemClick(index)}
+                        >
+                          <IonIcon icon={add} slot="start" />
+                          Add
+                        </IonButton>
+                      ) : null}
+                    </div>
+                    <div className="pafControl chemSelectWrap">
+                      <IonSelect
+                        value={selectedOptions[index]}
+                        placeholder="Select Option"
+                        interface="popover"
+                        className="pafSelect"
+                        onIonChange={(e) => {
+                          handleSelectChange(
+                            index,
+                            e.detail.value,
+                            data?.pest_report_type
+                          );
+                        }}
                       >
-                        <IonIcon icon={add}></IonIcon> Add
-                      </IonButton>
-                    )
-                  )}
-                  <IonItem lines="none" className="ionSelectChemicalUsed">
-                    <IonSelect
-                      value={selectedOptions}
-                      placeholder={selectedOptions[index] || "Select Option"}
-                      fill="outline"
-                      onIonChange={(e) => {
-                        handleSelectChange(
-                          index,
-                          e.detail.value,
-                          data?.pest_report_type
-                        );
-                      }}
-                    >
-                      <IonSelectOption value="Yes">Yes</IonSelectOption>
-                      <IonSelectOption value="No">No</IonSelectOption>
-                    </IonSelect>
-                  </IonItem>
+                        <IonSelectOption value="Yes">Yes</IonSelectOption>
+                        <IonSelectOption value="No">No</IonSelectOption>
+                      </IonSelect>
+                    </div>
+                  </div>
                   {validationErrors[index] && formSubmitted && (
                     <IonText color="danger" style={{ paddingLeft: "15px" }}>
                       {validationErrors[index]}

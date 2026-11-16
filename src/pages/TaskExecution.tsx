@@ -2,15 +2,12 @@ import {
   IonAlert,
   IonButton,
   IonContent,
-  IonFooter,
-  IonHeader,
-  IonIcon,
   IonImg,
   IonItem,
   IonList,
+  IonPage,
   IonText,
   IonThumbnail,
-  IonToolbar,
 } from "@ionic/react";
 import swal from "sweetalert";
 import React, { useState, useEffect } from "react";
@@ -403,59 +400,41 @@ const TaskExecution: React.FC = () => {
   }, [taskProgress]);
 
   return (
-    <>
+    <IonPage className="taskExecutionPage">
       <ToastContainer />
       <CommonHeader
         backToPath={"/tasks"}
         pageTitle={"Task Execution"}
         showIcons={true}
       />
-      <IonContent fullscreen className="ionContentColor">
-        <div className="ionPaddingBottom">
-          <IonList className="ion-list-item executionTopHeading ion-padding">
-            <IonItem lines="none">
-              <IonThumbnail slot="start" className="thumbnailIcon">
-                <IonImg src="/assets/images/location-icon.svg"></IonImg>
+      <IonContent className="ionContentColor taskExecutionContent">
+        <div className="execPageInner">
+          <div className="execSummaryCard">
+            <div className="execSummaryTop">
+              <IonThumbnail className="execSummaryIcon">
+                <IonImg src="/assets/images/location-icon.svg" />
               </IonThumbnail>
-              <div>
-                <IonText>
+              <div className="execSummaryBody">
+                <div className="execSummaryTitleRow">
                   <h3>{activeTaskData.service_name}</h3>
-                  <h2>{activeTaskData.address}</h2>
-                  <p>
-                    {formatDate(activeTaskData.created_on) +
-                      " " +
-                      formatTime(activeTaskData.created_on)}
-                  </p>
-                </IonText>
+                  {isPaused ? (
+                    <span className="execPausedBadge">Paused</span>
+                  ) : null}
+                </div>
+                <h2>{activeTaskData.address}</h2>
+                <p>
+                  {formatDate(activeTaskData.created_on) +
+                    " " +
+                    formatTime(activeTaskData.created_on)}
+                </p>
               </div>
-            </IonItem>
-          </IonList>
-
-          <div className="previewBts">
-            <IonItem lines="none" className="ion-float-end">
-              {/* {
-                taskProgress?.teamAttendance === 1 &&
-                  taskProgress?.travelStart === 1 &&
-                  taskProgress?.travelEnd === 1
-                  ? <IonButton
-                    shape="round"
-                    color="secondary"
-                    onClick={toggleTrackingTime}
-                  >
-                    <IonImg
-                      src={
-                        isPaused
-                          ? "/assets/images/resume-icon.svg"
-                          : "/assets/images/pause-icon.svg"
-                      }
-                    ></IonImg>
-                  </IonButton>
-                  : undefined
-              } */}
-              <IonButton
-                shape="round"
-                color="secondary"
+            </div>
+            <div className="execActionBar">
+              <button
+                type="button"
+                className={`execActionBtn ${isPaused ? "is-paused" : ""}`}
                 onClick={toggleTrackingTime}
+                aria-label={isPaused ? "Resume task" : "Pause task"}
               >
                 <IonImg
                   src={
@@ -463,36 +442,49 @@ const TaskExecution: React.FC = () => {
                       ? "/assets/images/resume-icon.svg"
                       : "/assets/images/pause-icon.svg"
                   }
-                ></IonImg>
-              </IonButton>
-              <IonButton
-                shape="round"
-                routerLink={"/tasks/" + activeTaskData.id}
+                />
+                <span>{isPaused ? "Resume" : "Pause"}</span>
+              </button>
+              <button
+                type="button"
+                className="execActionBtn"
+                onClick={() => history.push("/tasks/" + activeTaskData.id)}
+                aria-label="Task details"
               >
-                <IonImg src="/assets/images/task-details-icon.svg"></IonImg>
-              </IonButton>
-              <IonButton shape="round" routerLink="/TaskPreview">
-                <IonImg src="/assets/images/preview-icon.svg"></IonImg>
-              </IonButton>
-            </IonItem>
+                <IonImg src="/assets/images/task-details-icon.svg" />
+                <span>Details</span>
+              </button>
+              <button
+                type="button"
+                className="execActionBtn"
+                onClick={() => history.push("/TaskPreview")}
+                aria-label="Preview"
+              >
+                <IonImg src="/assets/images/preview-icon.svg" />
+                <span>Preview</span>
+              </button>
+            </div>
           </div>
-          <div className="ion-padding-horizontal serviceRequestStatus">
-            <IonText>
+
+          <div className="serviceRequestStatus">
+            <IonText className="execSectionTitle">
               <h1>Service Request Status</h1>
+              <p>Complete each step in order to finish the visit</p>
             </IonText>
-            <IonList className="executionList">
+            <IonList lines="none" className="executionList">
               <IonItem className="step step-active" lines="none">
                 <IonThumbnail slot="start" className="circle">
                   <IonImg
                     className="ionImgCheckmark"
                     src="assets/images/checkmark-w-icon.svg"
-                  ></IonImg>
+                  />
                 </IonThumbnail>
-                <IonText>
+                <IonText className="execStepBody">
                   <h3>Service Request is Started</h3>
                   <h6>{taskStartTime}</h6>
                 </IonText>
               </IonItem>
+
               <IonItem
                 className={
                   taskProgress?.teamAttendance === -1
@@ -508,10 +500,11 @@ const TaskExecution: React.FC = () => {
                   <IonImg
                     className="ionImgCheckmark"
                     src="assets/images/checkmark-w-icon.svg"
-                  ></IonImg>
+                  />
                 </IonThumbnail>
                 <IonText
                   id="present-alert"
+                  className="execStepBody"
                   onClick={() => {
                     if (taskProgress?.teamAttendance === -1 && isPaused) {
                       toast.info(
@@ -543,15 +536,16 @@ const TaskExecution: React.FC = () => {
                         max: 100,
                       },
                     ]}
-                  ></IonAlert>
+                  />
                 )}
+
               <IonItem
                 className={
                   taskProgress?.travelStart === -1 &&
-                    taskProgress?.travelEnd === -1
+                  taskProgress?.travelEnd === -1
                     ? "step"
                     : taskProgress?.travelStart === 1 &&
-                      taskProgress?.travelEnd === 1
+                        taskProgress?.travelEnd === 1
                       ? "step step-active"
                       : "step"
                 }
@@ -561,76 +555,83 @@ const TaskExecution: React.FC = () => {
                   <IonImg
                     className="ionImgCheckmark"
                     src="assets/images/checkmark-w-icon.svg"
-                  ></IonImg>
+                  />
                 </IonThumbnail>
-                <IonText>
+                <IonText className="execStepBody">
                   <h3>Track Travel Time</h3>
-                  <div>
+                  <div className="execTravelActions">
                     {!isTravelStartEnable ? (
-
                       <h6>Start Time: {travelStartTime}</h6>
                     ) : (
-                      taskProgress?.teamAttendance === 1 &&
-                      <IonButton
-                        onClick={() => {
-                          if (taskProgress?.travelStart === -1 && isPaused) {
-                            toast.info(
-                              "Please resume the task to perform the action"
-                            );
-                          } else {
-                            startTrackingTime();
-                          }
-                        }}
-                      >
-                        StartTime
-                      </IonButton>
+                      taskProgress?.teamAttendance === 1 && (
+                        <IonButton
+                          className="execMiniBtn"
+                          size="small"
+                          onClick={() => {
+                            if (taskProgress?.travelStart === -1 && isPaused) {
+                              toast.info(
+                                "Please resume the task to perform the action"
+                              );
+                            } else {
+                              startTrackingTime();
+                            }
+                          }}
+                        >
+                          Start Time
+                        </IonButton>
+                      )
                     )}
                     {isTravelEndEnable ? (
-                      taskProgress?.teamAttendance === 1 &&
-                      <IonButton
-                        onClick={() => {
-                          if (taskProgress?.travelEnd === -1 && isPaused) {
-                            toast.info(
-                              "Please resume the task to perform the action"
-                            );
-                          } else {
-                            endTrackingTime();
-                          }
-                        }}
-                      >
-                        EndTime
-                      </IonButton>
+                      taskProgress?.teamAttendance === 1 && (
+                        <IonButton
+                          className="execMiniBtn"
+                          size="small"
+                          fill="outline"
+                          onClick={() => {
+                            if (taskProgress?.travelEnd === -1 && isPaused) {
+                              toast.info(
+                                "Please resume the task to perform the action"
+                              );
+                            } else {
+                              endTrackingTime();
+                            }
+                          }}
+                        >
+                          End Time
+                        </IonButton>
+                      )
                     ) : (
                       <h6>End Time: {travelEndTime}</h6>
                     )}
                   </div>
                 </IonText>
               </IonItem>
+
               <IonItem
                 className={
                   taskProgress?.pestActivityDiscov === -1
                     ? "step"
                     : taskProgress?.pestActivityDiscov === 1 &&
-                      taskProgress?.recommGiven === ProgressStatus.done
+                        taskProgress?.recommGiven === ProgressStatus.done
                       ? "step step-active"
                       : taskProgress?.pestActivityDiscov === 1 &&
-                        taskProgress?.recommGiven !== ProgressStatus.done ? "step step-semi-active"
+                          taskProgress?.recommGiven !== ProgressStatus.done
+                        ? "step step-semi-active"
                         : "step"
                 }
                 lines="none"
                 routerLink={
                   taskProgress?.travelStart === ProgressStatus.done &&
-                    taskProgress?.travelEnd === ProgressStatus.done &&
-                    taskProgress?.recommGiven !== ProgressStatus.done &&
-                    !isPaused &&
-                    visitExecutionDetails?.pests_found?.every(
-                      (pest: Pest) => pest.is_chemical_added !== null
-                    )
+                  taskProgress?.travelEnd === ProgressStatus.done &&
+                  taskProgress?.recommGiven !== ProgressStatus.done &&
+                  !isPaused &&
+                  visitExecutionDetails?.pests_found?.every(
+                    (pest: Pest) => pest.is_chemical_added !== null
+                  )
                     ? "/PestActivityFound"
                     : undefined
                 }
                 onClick={() => {
-                  console.log("onClick triggered for PestActivityFound");
                   if (isPaused) {
                     toast.info("Please resume the task to perform the action");
                   } else if (
@@ -646,9 +647,9 @@ const TaskExecution: React.FC = () => {
                   <IonImg
                     className="ionImgCheckmark"
                     src="assets/images/checkmark-w-icon.svg"
-                  ></IonImg>
+                  />
                 </IonThumbnail>
-                <IonText>
+                <IonText className="execStepBody">
                   <h3>Pest Activity Found Details</h3>
                   <h6>House Flies, House Mice</h6>
                 </IonText>
@@ -659,22 +660,24 @@ const TaskExecution: React.FC = () => {
                   taskProgress?.chemicalsUsed === -1
                     ? "step"
                     : taskProgress?.chemicalsUsed === 1 &&
-                      taskProgress?.recommGiven === ProgressStatus.done
+                        taskProgress?.recommGiven === ProgressStatus.done
                       ? "step step-active"
-                      : (taskProgress?.chemicalsUsed === 1 || taskProgress?.chemicalsUsed === ProgressStatus.inprogress) &&
-                        taskProgress?.recommGiven !== ProgressStatus.done ? "step step-semi-active"
+                      : (taskProgress?.chemicalsUsed === 1 ||
+                            taskProgress?.chemicalsUsed ===
+                              ProgressStatus.inprogress) &&
+                          taskProgress?.recommGiven !== ProgressStatus.done
+                        ? "step step-semi-active"
                         : "step"
                 }
                 lines="none"
                 routerLink={
                   taskProgress?.recommGiven === ProgressStatus.done &&
-                    taskProgress?.chemicalsUsed !== ProgressStatus.done &&
-                    !(taskProgress?.chemicalsUsed === -1 && isPaused)
+                  taskProgress?.chemicalsUsed !== ProgressStatus.done &&
+                  !(taskProgress?.chemicalsUsed === -1 && isPaused)
                     ? "/ChemicalUsed"
                     : undefined
                 }
                 onClick={() => {
-                  console.log("onClick triggered for ChemicalUsed");
                   if (taskProgress?.chemicalsUsed === -1 && isPaused) {
                     toast.info("Please resume the task to perform the action");
                   } else if (
@@ -690,9 +693,9 @@ const TaskExecution: React.FC = () => {
                   <IonImg
                     className="ionImgCheckmark"
                     src="assets/images/checkmark-w-icon.svg"
-                  ></IonImg>
+                  />
                 </IonThumbnail>
-                <IonText>
+                <IonText className="execStepBody">
                   <h3>Chemical Used</h3>
                   <h6>Advion Ant Gel, Ant Bait Station … View Details</h6>
                 </IonText>
@@ -709,13 +712,13 @@ const TaskExecution: React.FC = () => {
                 lines="none"
                 routerLink={
                   taskProgress?.pestActivityDiscov === ProgressStatus.done &&
-                    taskProgress?.chemicalsUsed === ProgressStatus.done &&
-                    taskProgress?.recommGiven !== ProgressStatus.done &&
-                    !(isPaused && taskProgress?.recommGiven === -1) &&
-                    visitExecutionDetails?.pests_found?.length! > 0 && // Ensure pests_found has items
-                    !visitExecutionDetails.pests_found.some(
-                      (pest: Pest) => pest.is_chemical_added === null
-                    ) // Ensure no pests have is_chemical_added as null
+                  taskProgress?.chemicalsUsed === ProgressStatus.done &&
+                  taskProgress?.recommGiven !== ProgressStatus.done &&
+                  !(isPaused && taskProgress?.recommGiven === -1) &&
+                  visitExecutionDetails?.pests_found?.length! > 0 &&
+                  !visitExecutionDetails.pests_found.some(
+                    (pest: Pest) => pest.is_chemical_added === null
+                  )
                     ? "/Recommendations"
                     : undefined
                 }
@@ -741,9 +744,9 @@ const TaskExecution: React.FC = () => {
                   <IonImg
                     className="ionImgCheckmark"
                     src="assets/images/checkmark-w-icon.svg"
-                  ></IonImg>
+                  />
                 </IonThumbnail>
-                <IonText>
+                <IonText className="execStepBody">
                   <h3>Recommendations</h3>
                   <h6>Keep the manholes close after the treatment</h6>
                 </IonText>
@@ -760,8 +763,8 @@ const TaskExecution: React.FC = () => {
                 lines="none"
                 routerLink={
                   taskProgress?.recommGiven === ProgressStatus.done &&
-                    taskProgress?.workDoneDetails !== ProgressStatus.done &&
-                    !(isPaused && taskProgress?.workDoneDetails === -1)
+                  taskProgress?.workDoneDetails !== ProgressStatus.done &&
+                  !(isPaused && taskProgress?.workDoneDetails === -1)
                     ? "/WorkDoneDetails"
                     : undefined
                 }
@@ -775,12 +778,13 @@ const TaskExecution: React.FC = () => {
                   <IonImg
                     className="ionImgCheckmark"
                     src="assets/images/checkmark-w-icon.svg"
-                  ></IonImg>
+                  />
                 </IonThumbnail>
-                <IonText>
+                <IonText className="execStepBody">
                   <h3>Work Done Details</h3>
                 </IonText>
               </IonItem>
+
               <IonItem
                 className={
                   taskProgress?.feedBack === -1
@@ -792,8 +796,8 @@ const TaskExecution: React.FC = () => {
                 lines="none"
                 routerLink={
                   taskProgress?.workDoneDetails === ProgressStatus.done &&
-                    taskProgress?.feedBack != ProgressStatus.done &&
-                    !(taskProgress?.feedBack === -1 && isPaused)
+                  taskProgress?.feedBack != ProgressStatus.done &&
+                  !(taskProgress?.feedBack === -1 && isPaused)
                     ? "/FeedbackFollowup"
                     : undefined
                 }
@@ -803,62 +807,24 @@ const TaskExecution: React.FC = () => {
                   }
                 }}
               >
-                <IonThumbnail slot="start">
-                  <IonImg
-                    className="ionImgCheckmark"
-                    src="assets/images/checkmark-w-icon.svg"
-                  ></IonImg>
-                </IonThumbnail>
-                <IonText>
-                  <h3>Feedback And Follow-up</h3>
-                  <h6>Very Good</h6>
-                </IonText>
-              </IonItem>
-              {/* <IonItem
-                className={
-                  taskProgress?.feedBack === ProgressStatus.done
-                    ? "step step-active"
-                    : "step"
-                }
-                lines="none"
-              >
                 <IonThumbnail slot="start" className="circle">
                   <IonImg
                     className="ionImgCheckmark"
                     src="assets/images/checkmark-w-icon.svg"
-                  ></IonImg>
+                  />
                 </IonThumbnail>
-                <IonText>
-                  <h3>End Form</h3>
+                <IonText className="execStepBody">
+                  <h3>Feedback And Follow-up</h3>
+                  <h6>Very Good</h6>
                 </IonText>
-              </IonItem> */}
+              </IonItem>
             </IonList>
           </div>
         </div>
         <FullScreenLoader isLoading={submitting} />
         <FullScreenLoaderTask isLoading={loading} />
       </IonContent>
-      {/* <IonFooter className="ion-footer">
-        <IonToolbar className="ionFooterTwoButtons">
-          <IonButton
-            className="ion-button"
-            fill="outline"
-            color="medium"
-            onClick={handleCancel}
-          >
-            Cancel
-          </IonButton>
-          <IonButton
-            className="ion-button"
-            color="primary"
-            disabled={!isSaveNextEnabled}
-            onClick={handleSaveSubmit}
-          >
-            Save & submit
-          </IonButton>
-        </IonToolbar>
-      </IonFooter> */}
-    </>
+    </IonPage>
   );
 };
 

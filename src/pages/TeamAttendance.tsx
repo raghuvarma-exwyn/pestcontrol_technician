@@ -1,32 +1,21 @@
 import {
   IonAlert,
-  IonBackButton,
   IonButton,
-  IonButtons,
-  IonCard,
-  IonCol,
   IonContent,
   IonFooter,
-  IonHeader,
-  IonIcon,
   IonImg,
   IonItem,
   IonList,
   IonPage,
-  IonRow,
   IonText,
   IonThumbnail,
-  IonTitle,
   IonToolbar,
-  IonCheckbox,
   IonProgressBar,
 } from "@ionic/react";
 import { useHistory, useParams, useLocation } from "react-router";
 import { useState, useEffect } from "react";
 import { submitTeamAttendenceBasedOnNetwork } from "../data/offline/entity/DataTransfer";
-import CustomBackButton from "../components/CustomBackButton";
 import CommonHeader from "../components/CommonHeader";
-import { submitTechnicianData } from "../data/apidata/technicianData/idealTechnicianData";
 import {
   Camera,
   CameraDirection,
@@ -41,14 +30,14 @@ import useLongitudeLocation from "../components/useLongitudeLocation";
 import FullScreenLoader from "../components/FullScreenLoader";
 import { Storage } from "@ionic/storage";
 import { getActiveTaskData } from "../data/localstorage/taskUtils";
-import {toast} from "react-toastify";
+import { toast } from "react-toastify";
 
 interface Technician {
   first_name: string;
   last_name: string;
   mobile_no: string;
   avatar?: string;
-  user_id: string; // Added the missing user_id property
+  user_id: string;
 }
 
 interface LocationState {
@@ -64,9 +53,6 @@ const TeamAttendance: React.FC = () => {
   const history = useHistory();
   const [submitting, setSubmitting] = useState(false);
   const [db, setDb] = useState<Storage | null>(null);
-  const goBack = () => {
-    history.goBack();
-  };
 
   const location = useLocation<LocationState>();
   const [selectedTechnicianData, setSelectedTechnicianData] = useState<
@@ -78,38 +64,32 @@ const TeamAttendance: React.FC = () => {
     null
   );
 
-  // ===============Local Storage DB=============
   useEffect(() => {
     async function initDb() {
       const store = new Storage();
       await store.create();
-      console.log("store:", store);
       setDb(store);
     }
-
     initDb();
   }, []);
 
   useEffect(() => {
-    console.log("Selected Technician Data:", selectedTechnicianData);
-    setLoading(false); // Set loading to false once data is fetched
+    setLoading(false);
   }, [selectedTechnicianData]);
 
-  // Fetching User Data from Session Storage
   const userDataString = localStorage.getItem("userData");
   if (!userDataString) {
     throw new Error("User data is not available");
   }
   const userData = JSON.parse(userDataString);
 
-  // =========================Submiting Data==========================
   const handleSubmit = async () => {
     try {
       localStorage.removeItem("selectedTechnicianDataLocal");
       setSubmitting(true);
 
       if (!baseImage) {
-        alert("Please upload a photo before submitting.");
+        toast.error("Please upload a photo before submitting.");
         setSubmitting(false);
         return;
       }
@@ -129,19 +109,13 @@ const TeamAttendance: React.FC = () => {
         avatar: userData.avatar,
       });
 
-      // Validate each technician object has 'user_id'
       for (const technician of updatedSelectedTechnicianData) {
         if (!technician.user_id) {
-          console.warn(
-            "Technician data does not have 'user_id' property:",
-            technician
-          );
           throw new Error("Technician data missing 'user_id' property");
         }
       }
 
       let actTaskData = await getActiveTaskData();
-      // Call function to handle network status and storage
       await submitTeamAttendenceBasedOnNetwork(
         actTaskData.id,
         updatedSelectedTechnicianData,
@@ -151,22 +125,16 @@ const TeamAttendance: React.FC = () => {
       );
 
       updateTaskStatus("task-id-todo", "teamAttendance", ProgressStatus.done);
-
-      console.log("Submit successful, navigating to TaskExecution.");
       history.push("/TaskExecution");
     } catch (error) {
       console.error("Error submitting technician data:", error);
-      toast.error('Server not responding. Please try again later.');
-      // Handle the error appropriately, e.g., show a user-friendly message
+      toast.error("Server not responding. Please try again later.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // =========================Photo Capture==========================
-
   const capturePhoto = async () => {
-    console.log("Launching camera");
     const image = await Camera.getPhoto({
       quality: 25,
       allowEditing: false,
@@ -175,13 +143,10 @@ const TeamAttendance: React.FC = () => {
       direction: CameraDirection.Rear,
       resultType: CameraResultType.Base64,
     });
-    var imageUrl = "data:image/jpeg;base64," + image.base64String;
-    console.log("Captured img url ", imageUrl);
+    const imageUrl = "data:image/jpeg;base64," + image.base64String;
     setBaseImage(imageUrl);
     setIsImageUploaded(true);
   };
-
-  // =========================Deleting Technician Logic==========================
 
   const confirmDeleteTechnician = (index: number) => {
     setTechnicianToDelete(index);
@@ -193,7 +158,6 @@ const TeamAttendance: React.FC = () => {
       const updatedTechnicians = [...selectedTechnicianData];
       updatedTechnicians.splice(technicianToDelete, 1);
       setSelectedTechnicianData(updatedTechnicians);
-      // Update localStorage after deletion
       localStorage.setItem(
         "selectedTechnicianDataLocal",
         JSON.stringify(updatedTechnicians)
@@ -203,146 +167,155 @@ const TeamAttendance: React.FC = () => {
     setShowAlert(false);
   };
 
-  // =========================TechnicianData Getting form Local Storage Logic==========================
-
   useEffect(() => {
     const storedData = localStorage.getItem("selectedTechnicianDataLocal");
     const previouslySelectedTechnicians = storedData
       ? JSON.parse(storedData)
       : [];
-    console.log(storedData);
-
-    // Set initial state with data from localStorage
     setSelectedTechnicianData(previouslySelectedTechnicians);
   }, []);
 
-  // =========================Navigate to AvailableTechnicians==========================
-
   const handleAdd = () => {
-    // Clear form data
     history.push("/availabletechnicians");
   };
 
+  const requiredCount = parseInt(techniciansRequired || "0", 10);
+  const teamCount = selectedTechnicianData.length;
+
   return (
-    <>
+    <IonPage className="teamAttendancePage">
       <CommonHeader
         backToPath={"/taskexecution"}
         pageTitle={"Team Attendance"}
         showIcons={false}
       />
-      <IonContent fullscreen className="ionContentColor">
-        {loading ? ( // Show the progress bar when loading
+      <IonContent className="ionContentColor teamAttendanceContent">
+        {loading ? (
           <IonProgressBar type="indeterminate" />
         ) : (
-          <div className="ionPaddingBottom">
-            <IonList className="ion-list-item executionTopHeading ion-padding">
-              <IonItem lines="none">
-                <IonThumbnail slot="start" className="thumbnailIcon">
-                  <IonImg src="../../../assets/images/technician-icon.svg"></IonImg>
-                </IonThumbnail>
+          <div className="teamAttendanceInner">
+            <div className="teamLeadCard">
+              <IonThumbnail className="teamLeadIcon">
+                <IonImg src="assets/images/technician-icon.svg" />
+              </IonThumbnail>
+              <div className="teamLeadBody">
+                <h2>
+                  {userData.first_name} {userData.last_name}
+                </h2>
+                <p className="teamLeadRole">{userData.role_name}</p>
+                <div className="teamLeadMeta">
+                  <span>ID: {userData.user_id}</span>
+                  <span>{teamCount} technician{teamCount === 1 ? "" : "s"} added</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="teamSectionHeader">
+              <div>
+                <h1>Team Members</h1>
+                <p>
+                  {requiredCount > 0
+                    ? `Required: ${requiredCount}`
+                    : "Add technicians attending this visit"}
+                </p>
+              </div>
+              <IonButton
+                className="teamAddBtn"
+                fill="outline"
+                color="primary"
+                onClick={handleAdd}
+                disabled={requiredCount === 0}
+              >
+                Add
+              </IonButton>
+            </div>
+
+            {teamCount > 0 ? (
+              <IonList lines="none" className="teamMemberList">
+                {selectedTechnicianData.map((technician, index) => (
+                  <IonItem key={index} className="teamMemberItem" lines="none">
+                    <IonThumbnail slot="start" className="teamMemberIcon">
+                      <IonImg
+                        src={
+                          technician.avatar ||
+                          "assets/images/technician-icon.svg"
+                        }
+                      />
+                    </IonThumbnail>
+                    <IonText className="teamMemberText">
+                      <h3>
+                        {technician.first_name} {technician.last_name}
+                      </h3>
+                      <p>{technician.mobile_no}</p>
+                    </IonText>
+                    <IonButton
+                      className="teamDeleteBtn"
+                      shape="round"
+                      fill="clear"
+                      onClick={() => confirmDeleteTechnician(index)}
+                      aria-label="Remove technician"
+                    >
+                      <IonImg src="/assets/images/delete-icon.svg" />
+                    </IonButton>
+                  </IonItem>
+                ))}
+              </IonList>
+            ) : (
+              <div className="teamEmptyState">
+                <IonImg
+                  className="teamEmptyImg"
+                  src="assets/images/nodata-technician-img.svg"
+                />
                 <IonText>
-                  <h2>
-                    {userData.first_name} {userData.last_name}
-                  </h2>
-                  <h2>{userData.role_name}</h2>
+                  <h3>No technicians added</h3>
                   <p>
-                    {userData.user_id} | Total Technicians :{" "}
-                    {selectedTechnicianData.length}
+                    Add available technicians who are attending this service
+                    visit.
                   </p>
                 </IonText>
-              </IonItem>
-            </IonList>
-            <div className="ion-padding-horizontal ion-padding-top serviceRequestStatus">
-              {selectedTechnicianData.length > 0 ||
-              selectedTechnicianData.length === 0 ? (
-                <>
-                  <IonList lines="full" class="ion-list-item listItemAll">
-                    {selectedTechnicianData.map((technician, index) => (
-                      <IonItem key={index}>
-                        <IonThumbnail slot="start" class="thumbnailIcon">
-                          <IonImg src="assets/images/technician-icon.svg"></IonImg>
-                        </IonThumbnail>
-                        <IonText className="listCont">
-                          <h3>
-                            {technician.first_name} {technician.last_name}
-                          </h3>
-                          <h2>{technician.mobile_no}</h2>
-                        </IonText>
-                        <IonButton
-                          className="itemBt"
-                          shape="round"
-                          onClick={() => confirmDeleteTechnician(index)}
-                        >
-                          <IonImg src="/assets/images/delete-icon.svg"></IonImg>
-                        </IonButton>
-                      </IonItem>
-                    ))}
-                  </IonList>
+                <IonButton
+                  fill="solid"
+                  color="primary"
+                  className="ion-button"
+                  onClick={handleAdd}
+                  disabled={requiredCount === 0}
+                >
+                  Add Technician
+                </IonButton>
+              </div>
+            )}
 
-                  <IonButton
-                    className="ion-button"
-                    fill="solid"
-                    color="medium"
-                    onClick={capturePhoto}
-                  >
-                    Take a Photo
-                  </IonButton>
-                  <IonButton
-                    className="ion-button"
-                    fill="outline"
-                    color="medium"
-                    onClick={handleAdd}
-                    style={{ padding: "30px", marginLeft: "23px" }}
-                    disabled={parseInt(techniciansRequired) === 0}
-                  >
-                    Add
-                  </IonButton>
-                  <div className="image-container">
-                    {baseImage && (
-                      <img
-                        src={baseImage}
-                        alt="Pest Photo"
-                        className="uploaded-image"
-                      />
-                    )}
-                  </div>
-                </>
+            <div className="teamPhotoSection">
+              <div className="teamSectionHeader">
+                <div>
+                  <h1>Attendance Photo</h1>
+                  <p>Capture a team photo before submitting</p>
+                </div>
+              </div>
+              <div className="teamPhotoActions">
+                <IonButton
+                  className="ion-button teamPhotoBtn"
+                  fill="solid"
+                  color="medium"
+                  expand="block"
+                  onClick={capturePhoto}
+                >
+                  {baseImage ? "Retake Photo" : "Take a Photo"}
+                </IonButton>
+              </div>
+              {baseImage ? (
+                <div className="teamPhotoPreview">
+                  <img src={baseImage} alt="Team attendance" />
+                </div>
               ) : (
-                <div className="nodata-technician-img">
-                  <IonImg
-                    className="ion-text-center"
-                    src="../../../assets/images/nodata-technician-img.svg"
-                  ></IonImg>
-                  <IonText className="ion-text-center">
-                    <p>
-                      No data for the technician. Please click on the button
-                      below to add the technician.
-                    </p>
-                  </IonText>
-                  <IonButton
-                    fill="outline"
-                    color="primary"
-                    routerLink="/AvailableTechnicians"
-                  >
-                    Add Technician
-                  </IonButton>
+                <div className="teamPhotoPlaceholder">
+                  <p>No photo captured yet</p>
                 </div>
               )}
-
-              <IonToolbar>
-                <IonButton
-                  className="ion-button ion-margin-horizontal"
-                  expand="block"
-                  color={"primary"}
-                  onClick={handleSubmit}
-                  disabled={!isImageUploaded} // Disable the button if no image is uploaded
-                >
-                  Submit
-                </IonButton>
-              </IonToolbar>
             </div>
           </div>
         )}
+
         <FullScreenLoader isLoading={submitting} />
         <IonAlert
           isOpen={showAlert}
@@ -354,9 +327,6 @@ const TeamAttendance: React.FC = () => {
               text: "Cancel",
               role: "cancel",
               cssClass: "secondary",
-              handler: () => {
-                console.log("Cancel clicked");
-              },
             },
             {
               text: "Delete",
@@ -365,7 +335,21 @@ const TeamAttendance: React.FC = () => {
           ]}
         />
       </IonContent>
-    </>
+
+      <IonFooter className="ion-footer ion-no-border">
+        <IonToolbar>
+          <IonButton
+            className="ion-button ion-margin-horizontal"
+            expand="block"
+            color="primary"
+            onClick={handleSubmit}
+            disabled={!isImageUploaded || submitting}
+          >
+            Submit Attendance
+          </IonButton>
+        </IonToolbar>
+      </IonFooter>
+    </IonPage>
   );
 };
 

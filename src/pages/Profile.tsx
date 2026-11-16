@@ -8,8 +8,9 @@ import {
   IonToolbar,
   IonIcon,
   IonFooter,
+  IonPage,
 } from "@ionic/react";
-import { pencil, arrowBack } from "ionicons/icons";
+import { arrowBack } from "ionicons/icons";
 import { useHistory } from "react-router";
 import AvatarImage from "../../public/assets/images/avatar_image.jpeg";
 import ChangePasswordForm from "../components/ChangePassword";
@@ -19,16 +20,15 @@ const Profile: React.FC = () => {
   const [userData, setUserData] = useState<any>(null);
   const [avatar, setAvatar] = useState<string>(AvatarImage);
   const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
-  const app_version: any = localStorage.getItem('app_version');
-  const app_name: any = localStorage.getItem('app_name');
+  const app_version: any = localStorage.getItem("app_version");
 
   useEffect(() => {
     const userDataString = localStorage.getItem("userData");
     if (userDataString) {
-      const userData = JSON.parse(userDataString);
-      setUserData(userData);
-      if (userData.avatar) {
-        setAvatar(userData.avatar);
+      const parsed = JSON.parse(userDataString);
+      setUserData(parsed);
+      if (parsed.avatar) {
+        setAvatar(parsed.avatar);
       }
     }
   }, []);
@@ -38,6 +38,7 @@ const Profile: React.FC = () => {
   const goBack = () => {
     history.goBack();
   };
+
   const toggleChangePasswordForm = () => {
     setShowChangePasswordForm((prev) => !prev);
   };
@@ -63,138 +64,74 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <>
-      <IonToolbar>
+    <IonPage className="profilePage">
+      <IonToolbar className="profileToolbar">
         <IonButton fill="clear" onClick={goBack} slot="start">
-          <IonIcon slot="icon-only" icon={arrowBack} />
+          <IonIcon slot="start" icon={arrowBack} />
           Profile
         </IonButton>
       </IonToolbar>
       <IonContent fullscreen className="ionContentColor">
-        <div style={{ paddingBottom: "16px", textAlign: "center" }}>
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <div
-              style={{
-                position: "relative",
-                display: "inline-block",
-                textAlign: "center",
-              }}
-            >
-              <IonThumbnail
-                style={{
-                  margin: "auto",
-                  "--size": "90px",
-                  "--border-radius": "100%",
-                  marginTop: "30px",
-                  border: "solid 6px rgba(255, 255, 255, 0.63)",
-                  position: "relative",
-                  display: "inline-block",
-                }}
-              >
-                <IonImg
-                  alt="user"
-                  src={avatar}
-                  style={{ borderRadius: "50%" }}
-                ></IonImg>
-                {/* <IonIcon
-                  icon={pencil}
-                  style={{
-                    position: "absolute",
-                    top: "-5px",
-                    right: "-5px",
-                    background: "white",
-                    borderRadius: "50%",
-                    padding: "5px",
-                    cursor: "pointer",
-                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-                  }}
-                  onClick={() =>
-                    document.getElementById("avatarInput")?.click()
-                  }
-                /> */}
-              </IonThumbnail>
-              <input
-                type="file"
-                id="avatarInput"
-                style={{ display: "none" }}
-                accept="image/*"
-                onChange={handleAvatarChange}
-              />
-            </div>
+        <div className="profileHero">
+          <div className="profileAvatarWrap">
+            <IonThumbnail className="profileAvatar">
+              <IonImg alt="user" src={avatar} />
+            </IonThumbnail>
+            <input
+              type="file"
+              id="avatarInput"
+              style={{ display: "none" }}
+              accept="image/*"
+              onChange={handleAvatarChange}
+            />
           </div>
 
           {userData && (
             <IonText>
-              <h1
-                style={{
-                  fontWeight: 700,
-                  fontSize: "2rem",
-                  textAlign: "center",
-                }}
-              >
+              <h1 className="profileName">
                 {userData.first_name} {userData.last_name}
               </h1>
-              <h6
-                style={{
-                  fontWeight: 400,
-                  fontSize: "25px",
-                  textAlign: "center",
-                }}
-              >
-                {userData.role_name}
-              </h6>
+              <h6 className="profileRole">{userData.role_name}</h6>
             </IonText>
           )}
-           {!showChangePasswordForm && (
-            <>
-          <IonButton
-            type="button"
-            style={{
-              borderRadius: "1px",
-              fontWeight: 600,
-              marginLeft: "40px",
-              marginRight: "40px",
-              marginTop: "40px",
-              marginBottom: showChangePasswordForm ? "0px" : "40px",
-            }}
-            slot="primary"
-            fill="solid"
-            expand="block"
-            onClick={toggleChangePasswordForm}
-            disabled={showChangePasswordForm}
-          >
-            CHANGE PASSWORD
-            </IonButton>
-              <IonButton
-                type="button"
-                style={{
-                  borderRadius: "1px",
-                  fontWeight: 600,
-                  marginLeft: "40px",
-                  marginRight: "40px",
-                  marginTop: "40px",
-                  marginBottom: "40px",
-                }}
-                slot="primary"
-                fill="solid"
-                expand="block"
-                onClick={handleLogout}
-              >
-              LOGOUT
-            </IonButton>
-            </>
-          )}
-            {showChangePasswordForm && (
-            <ChangePasswordForm onClose={handleCloseChangePasswordForm} />
-          )}
         </div>
+
+        {!showChangePasswordForm && (
+          <div className="profileActions">
+            <IonButton
+              type="button"
+              className="ion-button"
+              fill="solid"
+              expand="block"
+              onClick={toggleChangePasswordForm}
+            >
+              Change Password
+            </IonButton>
+            <IonButton
+              type="button"
+              className="ion-button"
+              color="medium"
+              fill="outline"
+              expand="block"
+              onClick={handleLogout}
+            >
+              Logout
+            </IonButton>
+          </div>
+        )}
+
+        {showChangePasswordForm && (
+          <div className="profileActions">
+            <ChangePasswordForm onClose={handleCloseChangePasswordForm} />
+          </div>
+        )}
       </IonContent>
-      <IonFooter className="ion-footer">
-        <IonText className='loginVersionAbsolute'>
-          <p>App Version &nbsp;{app_version}</p>
+      <IonFooter className="ion-footer ion-no-border">
+        <IonText className="loginVersionAbsolute">
+          <p>App Version {app_version}</p>
         </IonText>
       </IonFooter>
-    </>
+    </IonPage>
   );
 };
 

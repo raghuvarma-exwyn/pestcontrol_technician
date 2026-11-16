@@ -1,18 +1,14 @@
 import {
   IonAlert,
-  IonBackButton,
   IonButton,
-  IonButtons,
   IonContent,
   IonFooter,
-  IonHeader,
   IonIcon,
-  IonImg,
   IonList,
   IonModal,
-  IonTitle,
   IonToolbar,
   IonProgressBar,
+  IonPage,
 } from "@ionic/react";
 import { useState, useEffect } from "react";
 import { useHistory } from "react-router";
@@ -25,14 +21,14 @@ import {
   uploadOtherTaskFile,
 } from "../data/apidata/taskApi/taskDataApi";
 import { useParams } from "react-router-dom";
-import { formatDateTime2, getDateTime } from "../utils/dateTimeUtils";
+import { formatDateTime2 } from "../utils/dateTimeUtils";
 import CustomAlert from "../components/CustomAlert";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { toast, ToastContainer } from "react-toastify";
-import NotificationLength from "../components/NotificationLength";
 import FullScreenLoader from "../components/FullScreenLoader";
 import { API_BASE_URL } from "../data/baseUrl";
 import { cameraOutline, close, imageOutline } from "ionicons/icons";
+import CommonHeader from "../components/CommonHeader";
 
 const OtherTaskDetails: React.FC = () => {
   const params: any = useParams();
@@ -294,33 +290,14 @@ const OtherTaskDetails: React.FC = () => {
     history.goBack();
   };
   return (
-    <>
+    <IonPage>
       <ToastContainer />
-      <IonHeader
-        translate="yes"
-        className="ion-no-border ion-padding-horizontal"
-      >
-        <IonToolbar>
-          <IonButtons slot="start" className="ion-no-padding">
-            <IonBackButton defaultHref={"/"}></IonBackButton>
-          </IonButtons>
-          <IonTitle className="ion-float-start"> Task Details</IonTitle>
-          <div className="ion-float-end headerBts">
-            <IonButton shape="round" routerLink={"/"}>
-              <IonImg src="assets/images/home-outline-icon.svg" />
-            </IonButton>
-
-            <NotificationLength />
-            <IonButton shape="round" routerLink={"/profile"}>
-              <IonImg src="assets/images/account-user.svg" />
-            </IonButton>
-          </div>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent
-        fullscreen
-        className="dashboardWrapp ionContentColor ion-padding-horizontal"
-      >
+      <CommonHeader
+        backToPath={"/othertasks"}
+        pageTitle={"Task Details"}
+        showIcons={true}
+      />
+      <IonContent className="dashboardWrapp ionContentColor ion-padding-horizontal">
         {loading && <IonProgressBar type="indeterminate" />}
         <div className="ionPaddingBottom">
           <IonList lines="full" className="ion-list-item ">
@@ -493,7 +470,7 @@ const OtherTaskDetails: React.FC = () => {
         onClose={handleCloseAlert}
         onMessageClick={handleNavigateToList}
       />
-    </>
+    </IonPage>
   );
 };
 

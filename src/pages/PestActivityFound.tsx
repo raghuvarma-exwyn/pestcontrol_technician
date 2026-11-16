@@ -3,10 +3,7 @@ import {
   IonButton,
   IonContent,
   IonFooter,
-  IonItem,
-  IonList,
   IonText,
-  IonLabel,
   IonInput,
   IonToolbar,
   IonFab,
@@ -14,14 +11,13 @@ import {
   IonSelect,
   IonSelectOption,
   IonIcon,
-  IonToast,
   IonBadge,
   IonImg,
   IonHeader,
-  IonBackButton,
   IonButtons,
   IonTitle,
   IonSpinner,
+  IonPage,
 } from "@ionic/react";
 import { add } from "ionicons/icons";
 import { trash } from "ionicons/icons";
@@ -596,67 +592,71 @@ const PestActivityFound: React.FC = () => {
   };
 
   return (
-    <>
-      <IonHeader
-        translate="yes"
-        className="ion-no-border ion-padding-horizontal"
-      >
+    <IonPage className="pestActivityPage">
+      <IonHeader className="ion-no-border appPageHeader">
         <IonToolbar>
-          <IonButtons slot="start" className="ion-no-padding">
-            <IonButton onClick={goBack}>
-              <IonIcon icon={arrowBack} />{" "}
-              {/* You can use the appropriate arrow icon */}
+          <IonButtons slot="start">
+            <IonButton onClick={goBack} aria-label="Back">
+              <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
-          <IonTitle className="ion-float-start">Pest Activity Found</IonTitle>
-          <div className="ion-float-end headerBts">
-            <IonButton shape="round" onClick={navigateToTaskPreview}>
+          <IonTitle slot="start">Pest Activity Found</IonTitle>
+          <IonButtons slot="end" className="headerBts">
+            <IonButton
+              shape="round"
+              onClick={navigateToTaskPreview}
+              aria-label="Preview"
+            >
               <IonImg src="/assets/images/preview-icon.svg" />
             </IonButton>
-          </div>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen className="ionContentColor">
+
+      <IonContent className="ionContentColor pestActivityContent">
         <form onSubmit={handleSubmit(onSubmit, onSubmitError)}>
-          <div className="ion-padding-horizontal ion-padding-vertical ionPaddingBottom">
-            <IonText>
-              <h1 className="headingH1">Please update the form</h1>
-            </IonText>
+          <div className="pestActivityInner">
+            <div className="pestActivityIntro">
+              <h1>Pest Activity Details</h1>
+              <p>Record findings for this visit. You can add multiple entries.</p>
+            </div>
 
             {formDataArray.map((item, index) => (
-              <div className="formlist pafFormCard" key={index}>
-                {index > 0 && ( // Conditionally render the delete button for forms starting from the second form
-                  <IonButton
-                    className="itemBt deletePaf"
-                    shape="round"
-                    onClick={() => openDeleteAlert(index)}
-                    style={{
-                      margin: "auto",
-                      marginTop: "25px",
-                      marginLeft: "270px",
-                      width: "40px",
-                      height: "40px",
-                    }}
-                  >
-                    <IonImg
-                      src="/assets/images/delete-icon.svg"
-                      style={{ width: "20px", height: "20px" }}
-                    ></IonImg>
-                  </IonButton>
-                )}
-                <IonItem lines="none">
-                  <div className="width100">
-                    <IonLabel className="ion-label">
-                      Pest Found ?<IonText>*</IonText>
-                    </IonLabel>
+              <div className="pafFormCard" key={index}>
+                <div className="pafCardHeader">
+                  <div>
+                    <h2>Entry {index + 1}</h2>
+                    <p>
+                      {item.is_pest_found === "Yes"
+                        ? "Pest found"
+                        : item.is_pest_found === "No"
+                          ? "No pest found"
+                          : "Complete the fields below"}
+                    </p>
+                  </div>
+                  {index > 0 && (
+                    <IonButton
+                      className="pafDeleteBtn"
+                      shape="round"
+                      fill="clear"
+                      onClick={() => openDeleteAlert(index)}
+                      aria-label="Delete entry"
+                    >
+                      <IonImg src="/assets/images/delete-icon.svg" />
+                    </IonButton>
+                  )}
+                </div>
 
+                <div className="pafField">
+                  <label className="pafLabel">
+                    Pest Found?<span className="pafRequired">*</span>
+                  </label>
+                  <div className="pafControl">
                     <IonSelect
-                      // id={`is_pest_found${index}`}
-                      value={item.is_pest_found} // Bind value to state variable
+                      value={item.is_pest_found}
                       placeholder="Select"
-                      fill="outline"
-                      style={{ width: "100%" }}
-                      // defaultValue={item.is_pest_found}
+                      interface="popover"
+                      className="pafSelect"
                       onIonChange={(e: any) => {
                         handleIsPestFoundChange(e.detail.value!, index);
                         clearErrors("is_pest_found" + index);
@@ -672,23 +672,23 @@ const PestActivityFound: React.FC = () => {
                       <IonSelectOption value="No">No</IonSelectOption>
                     </IonSelect>
                   </div>
-                </IonItem>
+                </div>
                 {isSubmitted && errors["is_pest_found" + index] && (
-                  <IonBadge color="danger">
+                  <IonBadge color="danger" className="pafError">
                     {(errors["is_pest_found" + index] as any).message}
                   </IonBadge>
                 )}
 
-                <IonItem lines="none">
-                  <div className="width100">
-                    <IonLabel className="ion-label">
-                      Pest Activity Found <IonText>*</IonText>
-                    </IonLabel>
+                <div className="pafField">
+                  <label className="pafLabel">
+                    Pest Activity Found <span className="pafRequired">*</span>
+                  </label>
+                  <div className="pafControl">
                     <IonSelect
                       value={item.pest_report_type}
                       placeholder="Select"
-                      fill="outline"
-                      style={{ width: "100%" }}
+                      interface="popover"
+                      className="pafSelect"
                       onIonChange={(e: any) => {
                         handlePestActivityChange(e.detail.value!, index);
                         clearErrors("pest_report_type" + index);
@@ -699,34 +699,33 @@ const PestActivityFound: React.FC = () => {
                           message: "Pest Activity Found is required",
                         },
                       })}
-                      // {...setError( "pest_report_type" + index, { type: 'custom', message: 'custom message' })}
                     >
-                      {pestOptions.map((option, index) => (
-                        <IonSelectOption key={index} value={option.id}>
+                      {pestOptions.map((option, optIndex) => (
+                        <IonSelectOption key={optIndex} value={option.id}>
                           {option.pest_report_type}
                         </IonSelectOption>
                       ))}
                     </IonSelect>
                   </div>
-                </IonItem>
+                </div>
                 {isSubmitted && errors["pest_report_type" + index] && (
-                  <IonBadge color="danger">
+                  <IonBadge color="danger" className="pafError">
                     {(errors["pest_report_type" + index] as any).message}
                   </IonBadge>
                 )}
 
                 {item.is_pest_found === "Yes" && (
                   <>
-                    <IonItem lines="none">
-                      <div className="width100">
-                        <IonLabel className="ion-label">
-                          Activity Level <IonText>*</IonText>
-                        </IonLabel>
+                    <div className="pafField">
+                      <label className="pafLabel">
+                        Activity Level <span className="pafRequired">*</span>
+                      </label>
+                      <div className="pafControl">
                         <IonSelect
                           value={item.pest_severity}
                           placeholder="Select"
-                          fill="outline"
-                          style={{ width: "100%" }}
+                          interface="popover"
+                          className="pafSelect"
                           {...register("pest_severity" + index, {
                             required: {
                               value: true,
@@ -739,152 +738,133 @@ const PestActivityFound: React.FC = () => {
                           }}
                         >
                           <IonSelectOption value="High">High</IonSelectOption>
-                          <IonSelectOption value="Medium">
-                            Medium
-                          </IonSelectOption>
+                          <IonSelectOption value="Medium">Medium</IonSelectOption>
                           <IonSelectOption value="Low">Low</IonSelectOption>
                         </IonSelect>
                       </div>
-                    </IonItem>
+                    </div>
                     {isSubmitted && errors["pest_severity" + index] && (
-                      <IonBadge color="danger">
+                      <IonBadge color="danger" className="pafError">
                         {(errors["pest_severity" + index] as any).message}
                       </IonBadge>
                     )}
                   </>
                 )}
-                <IonItem lines="none">
-                  <div className="width100">
-                    <IonLabel className="ion-label">
-                      Area<IonText>*</IonText>
-                    </IonLabel>
+
+                <div className="pafField">
+                  <label className="pafLabel">
+                    Area <span className="pafRequired">*</span>
+                  </label>
+                  <div className="pafControl">
                     <IonInput
-                      value={item.pest_area} // Bind value to state variable
-                      aria-label="Text"
-                      fill="outline"
-                      placeholder=""
+                      value={item.pest_area}
+                      aria-label="Area"
+                      className="pafInput"
+                      placeholder="Enter area"
                       onIonInput={(e: any) => {
                         handleAreaChange(e.detail.value, index);
                         clearErrors("pest_area" + index);
                       }}
                       {...register("pest_area" + index, {
-                        // <-- Correct field name here
                         required: {
                           value: true,
                           message: "Area is required",
                         },
                       })}
-                    ></IonInput>
-                  </div>
-                </IonItem>
-                {isSubmitted &&
-                  errors["pest_area" + index] && ( // <-- Correct field name here
-                    <IonBadge color="danger">
-                      {(errors["pest_area" + index] as any).message}
-                    </IonBadge>
-                  )}
-
-                <IonItem lines="none">
-                  <div className="ion-padding-bottom">
-                    <IonLabel className="ion-label">
-                      Photo of Pest Found <IonText>*</IonText>
-                    </IonLabel>
-                    {/* <input
-                    type="file"
-                    onChange={(e) => handlePestPhotoChange(e, index)}
-                    accept="image/*"
-                  /> */}
-
-                    <IonButton
-                      className="ion-button"
-                      fill="solid"
-                      color="medium"
-                      disabled={formDataArray[index].pest_photo.length >= 3}
-                      onClick={() => {
-                        capturePhoto(index);
-                      }}
-                    >
-                      Capture Image
-                    </IonButton>
-
-                    <input
-                      type="hidden"
-                      {...register(`formDataArray.${index}.pest_photo.0`, {
-                        validate: (value) => {
-                          // Ensure there's at least one image captured
-                          return (
-                            value ||
-                            formDataArray[index].pest_photo.length > 0 ||
-                            "Image capture is required"
-                          );
-                        },
-                      })}
                     />
                   </div>
-                </IonItem>
-                {Array.isArray(errors?.formDataArray) &&
-                  errors.formDataArray[index]?.pest_photo?.[0] && (
-                    <IonBadge color="danger">
-                      {errors.formDataArray[index].pest_photo[0].message}
-                    </IonBadge>
+                </div>
+                {isSubmitted && errors["pest_area" + index] && (
+                  <IonBadge color="danger" className="pafError">
+                    {(errors["pest_area" + index] as any).message}
+                  </IonBadge>
+                )}
+
+                <div className="pafPhotoBlock">
+                  <label className="pafLabel">
+                    Photo of Pest Found <span className="pafRequired">*</span>
+                  </label>
+                  <IonButton
+                    className="ion-button pafCaptureBtn"
+                    fill="solid"
+                    color="medium"
+                    expand="block"
+                    disabled={formDataArray[index].pest_photo.length >= 3}
+                    onClick={() => capturePhoto(index)}
+                  >
+                    Capture Image
+                  </IonButton>
+
+                  <input
+                    type="hidden"
+                    {...register(`formDataArray.${index}.pest_photo.0`, {
+                      validate: (value) => {
+                        return (
+                          value ||
+                          formDataArray[index].pest_photo.length > 0 ||
+                          "Image capture is required"
+                        );
+                      },
+                    })}
+                  />
+
+                  {Array.isArray(errors?.formDataArray) &&
+                    errors.formDataArray[index]?.pest_photo?.[0] && (
+                      <IonBadge color="danger" className="pafError">
+                        {errors.formDataArray[index].pest_photo[0].message}
+                      </IonBadge>
+                    )}
+
+                  {formDataArray[index].pest_photo.length >= 3 && (
+                    <IonText className="pafHint">
+                      You can capture up to 3 images.
+                    </IonText>
                   )}
 
-                {formDataArray[index].pest_photo.length >= 3 ? (
-                  <IonText style={{ color: "#54B4D3" }}>
-                    You cannot capture more than 3 images.
-                  </IonText>
-                ) : (
-                  ""
-                )}
-                {/* 
-                {isSubmitted && item.pest_photo.length < 1 && (
-                  <IonBadge color="danger">Image capture is required</IonBadge>
-                )} */}
-
-                {formDataArray[index].pest_photo.length > 0 && (
-                  <Splide
-                    options={{
-                      rewind: true,
-                      width: "100%",
-                      gap: "1rem",
-                    }}
-                  >
-                    {imageUploadStatus[index] && (
-                      <div className="absolute-center">
-                        {/* <IonLabel>image Uploading</IonLabel> */}
-                        <IonSpinner name="dots" />
-                      </div>
-                    )}
-                    {formDataArray[index].pest_photo.map(
-                      (photo: any, photoIndex: any) => (
-                        <SplideSlide key={photoIndex}>
-                          <IonImg src={photo} />
-                          <div slot="center" className="del" title="Delete">
-                            <p
-                              onClick={() =>
-                                handleRemoveImage(index, photoIndex)
-                              } // Ensure correct parameters
-                              style={{ width: "50%", margin: "10px auto" }}
-                            >
-                              &times;
-                            </p>
-                          </div>
-                          {/* {imgDelete && (
-                            <IonItem className="absolute-center">
-                              <IonLabel>Deleting</IonLabel>
-                              <IonSpinner name="dots" />
-                            </IonItem>
-                          )} */}
-                        </SplideSlide>
-                      )
-                    )}
-                  </Splide>
-                )}
+                  {formDataArray[index].pest_photo.length > 0 && (
+                    <div className="pafGallery">
+                      {imageUploadStatus[index] && (
+                        <div className="pafUploadOverlay">
+                          <IonSpinner name="dots" />
+                        </div>
+                      )}
+                      <Splide
+                        options={{
+                          rewind: true,
+                          width: "100%",
+                          gap: "0.75rem",
+                          pagination: true,
+                          arrows: formDataArray[index].pest_photo.length > 1,
+                        }}
+                      >
+                        {formDataArray[index].pest_photo.map(
+                          (photo: any, photoIndex: any) => (
+                            <SplideSlide key={photoIndex}>
+                              <div className="pafSlide">
+                                <IonImg src={photo} />
+                                <button
+                                  type="button"
+                                  className="pafRemoveImg"
+                                  title="Delete"
+                                  onClick={() =>
+                                    handleRemoveImage(index, photoIndex)
+                                  }
+                                >
+                                  &times;
+                                </button>
+                              </div>
+                            </SplideSlide>
+                          )
+                        )}
+                      </Splide>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
 
-          <IonFooter className="ion-footer">
+          <IonFooter className="ion-footer ion-no-border">
             <IonToolbar className="ionFooterTwoButtons">
               <IonButton
                 className="ion-button"
@@ -892,38 +872,41 @@ const PestActivityFound: React.FC = () => {
                 color="medium"
                 onClick={handleCancel}
               >
-                RESET
+                Reset
               </IonButton>
               <IonButton
                 className="ion-button"
                 color="primary"
                 type="submit"
-                //   disabled={submitting || !isFormValid}
+                disabled={submitting}
               >
-                SUBMIT
+                Submit
               </IonButton>
             </IonToolbar>
           </IonFooter>
         </form>
 
-        <IonFab slot="fixed" vertical="bottom" horizontal="end">
-          <IonFabButton onClick={handleAddForm}>
-            <IonIcon icon={add}></IonIcon>
+        <IonFab
+          slot="fixed"
+          vertical="bottom"
+          horizontal="end"
+          className="pafFab"
+        >
+          <IonFabButton onClick={handleAddForm} aria-label="Add entry">
+            <IonIcon icon={add} />
           </IonFabButton>
         </IonFab>
       </IonContent>
 
-      <div>
-        <FullScreenLoader isLoading={submitting} />
-      </div>
+      <FullScreenLoader isLoading={submitting} />
       <IonAlert
         isOpen={showDeleteAlert}
         onDidDismiss={handleCancelDelete}
         header={"Confirm Delete"}
-        message={"Do you really want to delete"}
+        message={"Do you really want to delete this entry?"}
         buttons={[
           {
-            text: "cancel",
+            text: "Cancel",
             role: "cancel",
             handler: handleCancelDelete,
           },
@@ -932,8 +915,8 @@ const PestActivityFound: React.FC = () => {
             handler: handleDeleteForm,
           },
         ]}
-      ></IonAlert>
-    </>
+      />
+    </IonPage>
   );
 };
 

@@ -1,23 +1,19 @@
 import {
   IonButton,
   IonContent,
-  IonItem,
-  IonList,
+  IonPage,
   IonText,
-  IonLabel,
-  IonInput,
   IonSelect,
   IonSelectOption,
   IonBadge,
   IonTextarea,
-  IonCol,
   IonToast,
   IonToolbar,
   IonFooter,
   IonProgressBar,
 } from "@ionic/react";
+import "./WorkDoneDetails.css";
 import { useHistory } from "react-router";
-import CustomBackButton from "../components/CustomBackButton";
 import CommonHeader from "../components/CommonHeader";
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
@@ -311,392 +307,329 @@ const WorkDoneDetails: React.FC = () => {
     }
   };
 
+  const renderSelect = (
+    index: number,
+    answers: any[],
+    multiple: boolean,
+    onChange: (value: any) => void
+  ) => (
+    <div className="pafControl wddControl">
+      <Controller
+        name={`questions[${index}].answer`}
+        control={control}
+        rules={{
+          required: {
+            value: true,
+            message: "This field is required",
+          },
+        }}
+        render={({ field }) => (
+          <IonSelect
+            {...field}
+            className="pafSelect"
+            placeholder="Select"
+            multiple={multiple}
+            interface="popover"
+            onIonChange={(e) => {
+              field.onChange(e.detail.value);
+              onChange(e.detail.value);
+            }}
+          >
+            {answers.map((answer: any) => (
+              <IonSelectOption key={answer.id} value={answer.options}>
+                {answer.options}
+              </IonSelectOption>
+            ))}
+          </IonSelect>
+        )}
+      />
+    </div>
+  );
+
   return (
-    <>
+    <IonPage className="workDonePage">
       <CommonHeader
         backToPath={"/taskexecution"}
         pageTitle={"Work Done Details"}
         showIcons={false}
       />
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <IonContent fullscreen className="ionContentColor">
-
+      <form onSubmit={handleSubmit(onSubmit)} className="workDoneForm">
+        <IonContent className="ionContentColor workDoneContent">
           {submittingProgress && <IonProgressBar type="indeterminate" />}
-          <div className="ion-padding-horizontal ion-padding-vertical ionPaddingBottom" >
-            <IonText>
-              <h1 className="headingH1">Please update the form</h1>
-            </IonText>
+          <div className="workDoneInner">
+            <div className="workDoneIntro">
+              <h1>Work Done Questionnaire</h1>
+              <p>Answer each question to complete this visit step.</p>
+            </div>
 
             {questions.map((item, index) => (
-              <IonList className="formlist" key={index}>
-                <IonItem lines="none">
-                  <div className="width100">
-                    <IonLabel className="ion-label">
-                      {item.questions.question}
-                      <IonText style={{ color: "danger" }}>*</IonText>
-                    </IonLabel>
+              <div className="wddCard" key={index}>
+                <div className="wddCardHeader">
+                  <span className="wddIndex">{index + 1}</span>
+                  <label className="wddLabel">
+                    {item.questions.question}
+                    <span className="pafRequired">*</span>
+                  </label>
+                </div>
 
-                    {/* Handle Descriptive Questions */}
-                    {item.questions.type.toLowerCase() === "descriptive" && (
-                      <IonTextarea
-                        aria-label="Text"
-                        fill="outline"
-                        placeholder="Enter text"
-                        {...register(`questions[${index}].answer`, {
-                          required: "This field is required", // Required validation message
-                        })}
-                        onIonChange={(e) =>
-                          handleInputChange(
-                            index,
-                            `questions[${index}].answer`,
-                            e.detail.value
-                          )
-                        }
-                      />
-                    )}
-
-                    {/* Handle Selection (Single) */}
-                    {item.questions.type.toLowerCase() === "selection" ||
-                      ("Mcq" && item.questions.selection_type === "single" && (
-                        <>
-                          <Controller
-                            name={`questions[${index}].answer`}
-                            control={control}
-                            rules={{
-                              required: {
-                                value: true,
-                                message: "This field is required",
-                              },
-                            }}
-                            render={({ field }) => (
-                              <IonSelect
-                                {...field}
-                                placeholder="Select"
-                                fill="outline"
-                                onIonChange={(e) =>
-                                  handleInputChange(
-                                    index,
-                                    `questions[${index}].answer`,
-                                    e.detail.value
-                                  )
-                                }
-                                style={{ height: "55px" }}
-                              >
-                                {item.answers.map((answer: any) => (
-                                  <IonSelectOption
-                                    key={answer.id}
-                                    value={answer.options}
-                                  >
-                                    {answer.options}
-                                  </IonSelectOption>
-                                ))}
-                              </IonSelect>
-                            )}
-                          />
-                          {isSubmitted && get(errors, `questions[${index}].answer`) && (
-                            <IonBadge color="danger">
-                              {String(
-                                get(
-                                  errors,
-                                  `questions[${index}].answer.message`
-                                )
-                              )}
-                            </IonBadge>
-                          )}
-
-                          {/* \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ */}
-                          {
-                            // Check if the question type is MCQ, Selection Type Single, or has dependency
-                            ["Yes", "MCQ", "Selection Type Single"].includes(
-                              watch(`questions[${index}].answer`)
-                            ) &&
-                            getSelectedAnswerObject(
-                              index,
-                              watch(`questions[${index}].answer`)
-                            )?.had_dependency === "1" && (
-                              <>
-                                <IonLabel className="ion-label">
-                                  Reason for Yes
-                                  <span style={{ color: "red" }}>
-                                    &nbsp;*
-                                  </span>
-                                </IonLabel>
-                                <IonTextarea
-                                  aria-label="Reason"
-                                  fill="outline"
-                                  placeholder="Description"
-                                  {...register(`questions[${index}].reason`, {
-                                    required: {
-                                      value: true,
-                                      message: "Reason is required",
-                                    },
-                                  })}
-                                  onIonInput={(e) => {
-                                    handleInputChange(
-                                      index,
-                                      `questions[${index}].reason`,
-                                      e.detail.value
-                                    );
-                                    trigger(`questions[${index}].reason`); // Manually trigger validation to remove error
-                                  }}
-                                ></IonTextarea>
-
-                                {/* Display error message if validation fails */}
-                                {/* Type guard to check for the existence of errors */}
-                                {(errors?.questions as any)?.[index]
-                                  ?.reason && (
-                                    <IonBadge color="danger">
-                                      {
-                                        (errors.questions as any)[index].reason
-                                          .message
-                                      }
-                                    </IonBadge>
-                                  )}
-                              </>
-                            )
-                          }
-
-                          {["No", "NA"].includes(
-                            watch(`questions[${index}].answer`)
-                          ) &&
-                            getSelectedAnswerObject(
-                              index,
-                              watch(`questions[${index}].answer`)
-                            )?.had_dependency === "1" && (
-                              <>
-                                <IonLabel className="ion-label">
-                                  Reason for{" "}
-                                  {watch(`questions[${index}].answer`) === "No"
-                                    ? "No"
-                                    : "NA"}
-                                  <span style={{ color: "red" }}>&nbsp;*</span>
-                                </IonLabel>
-                                <IonTextarea
-                                  aria-label="Reason"
-                                  fill="outline"
-                                  placeholder="Description"
-                                  {...register(`questions[${index}].reason`, {
-                                    required: {
-                                      value: true,
-                                      message: "Reason is required",
-                                    },
-                                  })}
-                                  onIonInput={(e) =>
-                                    handleInputChange(
-                                      index,
-                                      `questions[${index}].reason`,
-                                      e.detail.value
-                                    )
-                                  }
-                                ></IonTextarea>
-
-                                {/* Display error message if validation fails */}
-                                {/* Type guard to check for the existence of errors */}
-                                {(errors?.questions as any)?.[index]
-                                  ?.reason && (
-                                    <IonBadge color="danger">
-                                      {
-                                        (errors.questions as any)[index].reason
-                                          .message
-                                      }
-                                    </IonBadge>
-                                  )}
-                              </>
-                            )}
-                        </>
-                      ))}
-
-                    {/* Handle Selection (Multiple) */}
-                    {item.questions.type.toLowerCase() === "selection" &&
-                      item.questions.selection_type.toLowerCase() ===
-                      "multiple" && (
-                        <>
-                          <Controller
-                            name={`questions[${index}].answer`}
-                            control={control}
-                            rules={{
-                              required: {
-                                value: true,
-                                message: "This field is required",
-                              },
-                            }}
-                            render={({ field }) => (
-                              <IonSelect
-                                {...field}
-                                placeholder="Select"
-                                multiple={true}
-                                fill="outline"
-                                onIonChange={(e) =>
-                                  handleMultipleSelectionChange(
-                                    index,
-                                    `questions[${index}].answer`,
-                                    e.detail.value
-                                  )
-                                }
-                                style={{ height: "55px" }}
-                              >
-                                {item.answers.map((answer: any) => (
-                                  <IonSelectOption
-                                    key={answer.id}
-                                    value={answer.options}
-                                  >
-                                    {answer.options}
-                                  </IonSelectOption>
-                                ))}
-                              </IonSelect>
-                            )}
-                          />
-                          {isSubmitted && get(errors, `questions[${index}].answer`) && (
-                            <IonBadge color="danger">
-                              {String(
-                                get(
-                                  errors,
-                                  `questions[${index}].answer.message`
-                                )
-                              )}
-                            </IonBadge>
-                          )}
-                        </>
-                      )}
-                    {/* Handle Selection (Mcq & Multiple) */}
-                    {item.questions.type.toLowerCase() === "mcq" &&
-                      item.questions.selection_type.toLowerCase() ===
-                      "multi" && (
-                        <>
-                          <Controller
-                            name={`questions[${index}].answer`}
-                            control={control}
-                            rules={{
-                              required: {
-                                value: true,
-                                message: "This field is required",
-                              },
-                            }}
-                            render={({ field }) => (
-                              <IonSelect
-                                {...field}
-                                placeholder="Select"
-                                multiple={true}
-                                fill="outline"
-                                onIonChange={(e) => {
-                                  field.onChange(e);
-                                  handleMultipleSelectionChange(
-                                    index,
-                                    `questions[${index}].answer`,
-                                    e.detail.value
-                                  );
-                                }}
-                                style={{ height: "55px" }}
-                              >
-                                {item.answers.map((answer: any) => (
-                                  <IonSelectOption
-                                    key={answer.id}
-                                    value={answer.options}
-                                  >
-                                    {answer.options}
-                                  </IonSelectOption>
-                                ))}
-                              </IonSelect>
-                            )}
-                          />
-                          {get(errors, `questions[${index}].answer`) && (
-                            <IonBadge color="danger">
-                              {String(
-                                get(
-                                  errors,
-                                  `questions[${index}].answer.message`
-                                )
-                              )}
-                            </IonBadge>
-                          )}
-
-                          {watch(`questions[${index}].answer`)?.includes(
-                            "Yes"
-                          ) && (
-                              <>
-                                <IonLabel className="ion-label">
-                                  Reason for Yes
-                                  <span style={{ color: "red" }}>&nbsp;*</span>
-                                </IonLabel>
-                                <IonTextarea
-                                  aria-label="Reason"
-                                  fill="outline"
-                                  placeholder="Description"
-                                  {...register(`questions[${index}].reason`, {
-                                    required: {
-                                      value: true,
-                                      message:
-                                        "Reason is required when Yes is selected",
-                                    },
-                                  })}
-                                  onIonChange={(e) =>
-                                    handleInputChange(
-                                      index,
-                                      `questions[${index}].reason`,
-                                      e.detail.value
-                                    )
-                                  }
-                                ></IonTextarea>
-
-                                {/* Display error message if validation fails */}
-                                {/* Type guard to check for the existence of errors */}
-                                {(errors?.questions as any)?.[index]?.reason && (
-                                  <IonBadge color="danger">
-                                    {
-                                      (errors.questions as any)[index].reason
-                                        .message
-                                    }
-                                  </IonBadge>
-                                )}
-                              </>
-                            )}
-                        </>
-                      )}
-
-                    {/* Store Question ID and Dependency Label */}
-                    <input
-                      type="hidden"
-                      {...register(`questions[${index}].question_id`)}
-                      value={item.questions.id}
-                    />
-                    <input
-                      type="hidden"
-                      {...register(`questions[${index}].dependency_label`)}
-                      value={item.questions.dependency_label}
+                {item.questions.type.toLowerCase() === "descriptive" && (
+                  <div className="pafControl wddControl wddTextarea">
+                    <IonTextarea
+                      aria-label="Text"
+                      className="pafInput"
+                      placeholder="Enter text"
+                      autoGrow={true}
+                      {...register(`questions[${index}].answer`, {
+                        required: "This field is required",
+                      })}
+                      onIonChange={(e) =>
+                        handleInputChange(
+                          index,
+                          `questions[${index}].answer`,
+                          e.detail.value
+                        )
+                      }
                     />
                   </div>
-                </IonItem>
-              </IonList>
+                )}
+
+                {(item.questions.type.toLowerCase() === "selection" ||
+                  item.questions.type.toLowerCase() === "mcq") &&
+                  String(item.questions.selection_type || "")
+                    .toLowerCase() === "single" && (
+                  <>
+                    {renderSelect(index, item.answers || [], false, (value) =>
+                      handleInputChange(
+                        index,
+                        `questions[${index}].answer`,
+                        value
+                      )
+                    )}
+                    {isSubmitted &&
+                      get(errors, `questions[${index}].answer`) && (
+                        <IonBadge color="danger" className="wddError">
+                          {String(
+                            get(errors, `questions[${index}].answer.message`)
+                          )}
+                        </IonBadge>
+                      )}
+
+                    {["Yes", "MCQ", "Selection Type Single"].includes(
+                      watch(`questions[${index}].answer`)
+                    ) &&
+                      getSelectedAnswerObject(
+                        index,
+                        watch(`questions[${index}].answer`)
+                      )?.had_dependency === "1" && (
+                        <div className="wddReason">
+                          <label className="wddLabel">
+                            Reason for Yes
+                            <span className="pafRequired">*</span>
+                          </label>
+                          <div className="pafControl wddControl wddTextarea">
+                            <IonTextarea
+                              aria-label="Reason"
+                              className="pafInput"
+                              placeholder="Description"
+                              autoGrow={true}
+                              {...register(`questions[${index}].reason`, {
+                                required: {
+                                  value: true,
+                                  message: "Reason is required",
+                                },
+                              })}
+                              onIonInput={(e) => {
+                                handleInputChange(
+                                  index,
+                                  `questions[${index}].reason`,
+                                  e.detail.value
+                                );
+                                trigger(`questions[${index}].reason`);
+                              }}
+                            />
+                          </div>
+                          {(errors?.questions as any)?.[index]?.reason && (
+                            <IonBadge color="danger" className="wddError">
+                              {(errors.questions as any)[index].reason.message}
+                            </IonBadge>
+                          )}
+                        </div>
+                      )}
+
+                    {["No", "NA"].includes(
+                      watch(`questions[${index}].answer`)
+                    ) &&
+                      getSelectedAnswerObject(
+                        index,
+                        watch(`questions[${index}].answer`)
+                      )?.had_dependency === "1" && (
+                        <div className="wddReason">
+                          <label className="wddLabel">
+                            Reason for{" "}
+                            {watch(`questions[${index}].answer`) === "No"
+                              ? "No"
+                              : "NA"}
+                            <span className="pafRequired">*</span>
+                          </label>
+                          <div className="pafControl wddControl wddTextarea">
+                            <IonTextarea
+                              aria-label="Reason"
+                              className="pafInput"
+                              placeholder="Description"
+                              autoGrow={true}
+                              {...register(`questions[${index}].reason`, {
+                                required: {
+                                  value: true,
+                                  message: "Reason is required",
+                                },
+                              })}
+                              onIonInput={(e) =>
+                                handleInputChange(
+                                  index,
+                                  `questions[${index}].reason`,
+                                  e.detail.value
+                                )
+                              }
+                            />
+                          </div>
+                          {(errors?.questions as any)?.[index]?.reason && (
+                            <IonBadge color="danger" className="wddError">
+                              {(errors.questions as any)[index].reason.message}
+                            </IonBadge>
+                          )}
+                        </div>
+                      )}
+                  </>
+                )}
+
+                {item.questions.type.toLowerCase() === "selection" &&
+                  item.questions.selection_type.toLowerCase() ===
+                    "multiple" && (
+                    <>
+                      {renderSelect(
+                        index,
+                        item.answers || [],
+                        true,
+                        (value) =>
+                          handleMultipleSelectionChange(
+                            index,
+                            `questions[${index}].answer`,
+                            value
+                          )
+                      )}
+                      {isSubmitted &&
+                        get(errors, `questions[${index}].answer`) && (
+                          <IonBadge color="danger" className="wddError">
+                            {String(
+                              get(errors, `questions[${index}].answer.message`)
+                            )}
+                          </IonBadge>
+                        )}
+                    </>
+                  )}
+
+                {item.questions.type.toLowerCase() === "mcq" &&
+                  item.questions.selection_type.toLowerCase() === "multi" && (
+                    <>
+                      {renderSelect(
+                        index,
+                        item.answers || [],
+                        true,
+                        (value) =>
+                          handleMultipleSelectionChange(
+                            index,
+                            `questions[${index}].answer`,
+                            value
+                          )
+                      )}
+                      {get(errors, `questions[${index}].answer`) && (
+                        <IonBadge color="danger" className="wddError">
+                          {String(
+                            get(errors, `questions[${index}].answer.message`)
+                          )}
+                        </IonBadge>
+                      )}
+
+                      {watch(`questions[${index}].answer`)?.includes(
+                        "Yes"
+                      ) && (
+                        <div className="wddReason">
+                          <label className="wddLabel">
+                            Reason for Yes
+                            <span className="pafRequired">*</span>
+                          </label>
+                          <div className="pafControl wddControl wddTextarea">
+                            <IonTextarea
+                              aria-label="Reason"
+                              className="pafInput"
+                              placeholder="Description"
+                              autoGrow={true}
+                              {...register(`questions[${index}].reason`, {
+                                required: {
+                                  value: true,
+                                  message:
+                                    "Reason is required when Yes is selected",
+                                },
+                              })}
+                              onIonChange={(e) =>
+                                handleInputChange(
+                                  index,
+                                  `questions[${index}].reason`,
+                                  e.detail.value
+                                )
+                              }
+                            />
+                          </div>
+                          {(errors?.questions as any)?.[index]?.reason && (
+                            <IonBadge color="danger" className="wddError">
+                              {(errors.questions as any)[index].reason.message}
+                            </IonBadge>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                <input
+                  type="hidden"
+                  {...register(`questions[${index}].question_id`)}
+                  value={item.questions.id}
+                />
+                <input
+                  type="hidden"
+                  {...register(`questions[${index}].dependency_label`)}
+                  value={item.questions.dependency_label}
+                />
+              </div>
             ))}
           </div>
-          <IonFooter className="ion-footer">
-            <IonToolbar className="ionFooterTwoButtons">
-              <IonButton
-                className="ion-button"
-                fill="outline"
-                color="medium"
-                onClick={handleCancel}
-              >
-                RESET
-              </IonButton>
-              <IonButton type="submit" className="ion-button" color="primary">
-                SUBMIT
-              </IonButton>
-              <IonToast
-                isOpen={showToast}
-                onDidDismiss={() => setShowToast(false)}
-                message={toastMessage}
-                duration={3000}
-              />
-            </IonToolbar>
-          </IonFooter>
-
-
         </IonContent>
-      </form>
-      <FullScreenLoader isLoading={submitting} />
 
-    </>
+        <IonFooter className="ion-footer ion-no-border">
+          <IonToolbar className="ionFooterTwoButtons">
+            <IonButton
+              className="ion-button"
+              fill="outline"
+              color="medium"
+              onClick={handleCancel}
+            >
+              Reset
+            </IonButton>
+            <IonButton type="submit" className="ion-button" color="primary">
+              Submit
+            </IonButton>
+          </IonToolbar>
+        </IonFooter>
+      </form>
+
+      <IonToast
+        isOpen={showToast}
+        onDidDismiss={() => setShowToast(false)}
+        message={toastMessage}
+        duration={3000}
+      />
+      <FullScreenLoader isLoading={submitting} />
+    </IonPage>
   );
 };
 

@@ -1,12 +1,11 @@
 import React, { useState, useImperativeHandle, forwardRef } from "react";
 import {
-  IonCol,
   IonItemGroup,
   IonLabel,
   IonButton,
   IonText,
   IonItem,
-} from "@ionic/react"; // Correct import
+} from "@ionic/react";
 import SignatureCanvas from "react-signature-canvas";
 
 interface Technician {
@@ -69,21 +68,21 @@ const TechnicianSignature = forwardRef(({ setTechnicianSignature }: Technician, 
           ref={padRef}
         />
       </IonItem>
-      <IonCol>
-        <div className="ion-float-right signatureBts">
-          <IonButton
-            color="light"
-            className="ion-margin-right"
-            onClick={handleClear}
-          >
+      <div className="signatureActions">
+        <div className="signatureBts">
+          <IonButton color="light" onClick={handleClear}>
             Clear
           </IonButton>
-          <IonButton onClick={handleGenerate} color="medium" disabled={!isEditable}>
+          <IonButton
+            onClick={handleGenerate}
+            color="medium"
+            disabled={!isEditable}
+          >
             {buttonText}
           </IonButton>
         </div>
         {errorMessage && <IonText color="danger">{errorMessage}</IonText>}
-      </IonCol>
+      </div>
     </IonItemGroup>
   );
 });

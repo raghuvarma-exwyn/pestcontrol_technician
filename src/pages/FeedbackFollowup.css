@@ -1,0 +1,233 @@
+.feedbackContent {
+  --padding-top: 8px;
+}
+
+.feedbackInner {
+  padding: 8px 16px calc(120px + env(safe-area-inset-bottom));
+}
+
+.feedbackIntro {
+  margin-bottom: 14px;
+}
+
+.feedbackIntro h1 {
+  margin: 0 0 4px;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--app-text, #2b2926);
+  letter-spacing: -0.01em;
+}
+
+.feedbackIntro p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--app-text-muted, #6d6860);
+  line-height: 1.4;
+}
+
+.ffuCard {
+  background: var(--app-surface-elevated, #fff);
+  border: 1px solid var(--app-border, #e2ddd6);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(43, 41, 38, 0.06);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.ffuCardHeader {
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--app-border, #e2ddd6);
+}
+
+.ffuCardHeader h2 {
+  margin: 0 0 2px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--app-text, #2b2926);
+}
+
+.ffuCardHeader p {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--app-text-muted, #6d6860);
+}
+
+.ffuField {
+  width: 100%;
+  margin: 0 0 12px;
+  box-sizing: border-box;
+}
+
+.ffuField:last-child {
+  margin-bottom: 0;
+}
+
+.ffuLabel {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--app-text-muted, #6d6860);
+  line-height: 1.3;
+}
+
+.pafRequired {
+  color: #d6455a;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.pafControl.ffuControl,
+.ffuControl {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #cfc8be;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.ffuControl:focus-within {
+  border-color: var(--app-primary, #8b7355);
+}
+
+.ffuControl ion-select,
+.ffuControl ion-input {
+  flex: 1 1 auto;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 44px;
+  margin: 0;
+  border: none !important;
+  --background: transparent;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --border-width: 0 !important;
+  --highlight-color-focused: transparent;
+  --placeholder-color: #8a847a;
+}
+
+.ffuControl ion-select {
+  --padding-end: 34px;
+}
+
+.ffuControl ion-select::part(icon) {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  margin: 0;
+  opacity: 0.55;
+}
+
+.ffuError {
+  display: inline-flex;
+  margin: 6px 0 0 2px;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.ffuSigBlock {
+  width: 100%;
+  margin: 0 0 18px;
+  overflow: hidden;
+}
+
+.ffuSigBlock:last-child {
+  margin-bottom: 0;
+}
+
+.feedbackPage {
+  .ffuCard {
+    overflow: hidden;
+  }
+
+  .sigIonGroup {
+    display: block;
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .sigIonGroup > .ion-label {
+    display: block;
+    margin: 0 0 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--app-text-muted, #6d6860);
+  }
+
+  .sigIonGroup ion-item {
+    --background: transparent;
+    --padding-start: 0;
+    --padding-end: 0;
+    --inner-padding-end: 0;
+    --inner-padding-start: 0;
+    --min-height: 0;
+    width: 100%;
+    margin: 0;
+    border: 1px solid #cfc8be;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .sigIonGroup .sigCanvas {
+    display: block;
+    width: 100% !important;
+    max-width: 100%;
+    height: 120px;
+    border: none !important;
+    border-radius: 0;
+    padding: 0 !important;
+  }
+
+  .signatureActions {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    clear: both;
+  }
+
+  .signatureBts {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    float: none !important;
+    margin: 0;
+  }
+
+  .signatureBts ion-button {
+    margin: 0 !important;
+    min-height: 34px;
+    height: 34px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: none;
+    --border-radius: 8px;
+  }
+
+  .ffuDatetime {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border: 1px solid #cfc8be;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .ffuDatetime::part(wheel-item) {
+    font-size: 0.9rem;
+  }
+
+  .ion-footer .ionFooterTwoButtons {
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+}

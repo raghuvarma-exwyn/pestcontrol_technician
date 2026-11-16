@@ -1,45 +1,290 @@
+.pestActivityContent {
+  --padding-top: 8px;
+}
+
+.pestActivityInner {
+  padding: 8px 16px calc(140px + env(safe-area-inset-bottom));
+}
+
+.pestActivityIntro {
+  margin-bottom: 14px;
+}
+
+.pestActivityIntro h1 {
+  margin: 0 0 4px;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--app-text, #2b2926);
+  letter-spacing: -0.01em;
+}
+
+.pestActivityIntro p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--app-text-muted, #6d6860);
+  line-height: 1.4;
+}
+
+.pafFormCard {
+  background: var(--app-surface-elevated, #fff);
+  border: 1px solid var(--app-border, #e2ddd6);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(43, 41, 38, 0.06);
+  padding: 14px;
+  margin-bottom: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pafCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--app-border, #e2ddd6);
+}
+
+.pafCardHeader h2 {
+  margin: 0 0 2px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--app-text, #2b2926);
+}
+
+.pafCardHeader p {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--app-text-muted, #6d6860);
+}
+
+.pafDeleteBtn {
+  margin: 0 !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  --padding-start: 0 !important;
+  --padding-end: 0 !important;
+  --border-radius: 50% !important;
+  flex: 0 0 36px;
+}
+
+.pafDeleteBtn::part(native) {
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.pafDeleteBtn ion-img {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+}
+
+.pafField {
+  width: 100%;
+  margin: 0 0 12px;
+  box-sizing: border-box;
+}
+
+.pafLabel {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--app-text-muted, #6d6860);
+  line-height: 1.3;
+}
+
+.pafRequired {
+  color: #d6455a;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* Full-width bordered shell — keeps select chevron inside */
+.pafControl {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #cfc8be;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.pafControl:focus-within {
+  border-color: var(--app-primary, #8b7355);
+}
+
+.pafControl ion-select.pafSelect,
+.pafControl ion-input.pafInput {
+  flex: 1 1 auto;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 44px;
+  margin: 0;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  --background: transparent;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --border-width: 0 !important;
+  --border-color: transparent !important;
+  --highlight-color-focused: transparent;
+  --placeholder-color: #8a847a;
+  --placeholder-opacity: 1;
+}
+
+.pafControl ion-select.pafSelect {
+  --padding-end: 34px;
+}
+
+.pafControl ion-select.pafSelect::part(icon) {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  margin: 0;
+  width: 14px;
+  height: 14px;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.pafControl ion-select.pafSelect::part(container) {
+  width: 100%;
+  max-width: 100%;
+}
+
+.pafControl ion-select.pafSelect::part(text) {
+  max-width: 100%;
+}
+
+.pafError {
+  display: inline-flex;
+  margin: -4px 0 10px 2px;
+  font-weight: 500;
+}
+
+.pafPhotoBlock {
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+.pafPhotoBlock .ion-label,
+.pafPhotoBlock .pafLabel {
+  display: block;
+  margin: 0 0 8px;
+}
+
+.pafCaptureBtn {
+  margin: 0 0 10px !important;
+  min-height: 44px;
+  width: 100%;
+}
+
+.pafHint {
+  display: block;
+  margin: 0 0 10px;
+  font-size: 0.76rem;
+  color: var(--app-accent, #0f9ea6);
+  font-weight: 500;
+}
+
+.pafGallery {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--app-border, #e2ddd6);
+  background: var(--app-surface-muted, #ebe8e3);
+}
+
+.pafSlide {
+  position: relative;
+  min-height: 180px;
+  background: #1f1d1b;
+}
+
+.pafSlide ion-img {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+.pafRemoveImg {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #2b2926;
+  font-size: 1.3rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  padding: 0;
+}
+
+.pafUploadOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.pestActivityPage .pafFab {
+  bottom: 88px;
+  right: 16px;
+  position: fixed;
+}
+
+.pestActivityPage .pafFab ion-fab-button {
+  --background: var(--app-primary, #8b7355);
+  --background-activated: var(--app-primary-dark, #6f5a42);
+  --box-shadow: 0 6px 18px rgba(43, 41, 38, 0.18);
+  width: 52px;
+  height: 52px;
+}
+
+.pestActivityPage .ion-footer {
+  z-index: 10;
+  background: var(--app-surface-elevated, #fff);
+}
+
+.pestActivityPage .ion-footer .ionFooterTwoButtons {
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) !important;
+}
+
 .absolute-center {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(
-    -50%,
-    -50%
-  ); /* Move the item back by 50% of its width and height */
-  z-index: 1000; /* Ensure it's on top of other content */
-  padding: 20px; /* Optional: Extra padding for better UI */
-  background: white; /* Optional: Background for contrast */
-  border-radius: 8px; /* Optional: Rounded corners */
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); /* Optional: Shadow for depth */
-}
-.del {
-  position: absolute; /* Fixed position relative to viewport */
-  top: 5%;
-  left: 97%;
   transform: translate(-50%, -50%);
-  background-color: white;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-
-  display: flex;
-
-  justify-content: center;
-  align-items: center;
-  align-content: center;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-.del p {
-  display: flex;
-  color: rgb(12, 0, 56);
-  justify-content: center;
-  align-items: center;
-  align-content: center;
-  font-weight: 600;
-  font-size: 25px;
+  z-index: 1000;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }

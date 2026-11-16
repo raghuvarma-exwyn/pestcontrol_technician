@@ -60,8 +60,8 @@ export const fetchTaskData = async (
         "tbl_visits.service_id",
       ],
       order_by: {
-        "tbl_visits.created_on": "asc",
-        "tbl_visits.service_date": "asc",
+        "tbl_visits.created_on": "desc",
+        //"tbl_visits.service_date": "asc",
       },
       filters: status,
       pagination: {

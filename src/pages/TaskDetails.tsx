@@ -328,37 +328,30 @@ const TaskDetails: React.FC = () => {
     history.goBack();
   };
   return (
-    <>
-      <IonHeader
-        translate="yes"
-        className="ion-no-border ion-padding-horizontal"
-      >
+    <IonPage>
+      <IonHeader className="ion-no-border appPageHeader">
         <IonToolbar>
-          <IonButtons slot="start" className="ion-no-padding">
-            <IonBackButton defaultHref={"/"}></IonBackButton>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/" text="Back" />
           </IonButtons>
-          <IonTitle className="ion-float-start"> Task Details</IonTitle>
-          <div className="ion-float-end headerBts">
-            <IonButton shape="round" routerLink={"/"}>
+          <IonTitle slot="start">Task Details</IonTitle>
+          <IonButtons slot="end" className="headerBts">
+            <IonButton shape="round" routerLink="/">
               <IonImg src="assets/images/home-outline-icon.svg" />
             </IonButton>
-           
-            <NotificationLength/>
-            <IonButton shape="round" routerLink={"/profile"}>
+            <NotificationLength />
+            <IonButton shape="round" routerLink="/profile">
               <IonImg src="assets/images/account-user.svg" />
             </IonButton>
-          </div>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent
-        fullscreen
-        className="dashboardWrapp ionContentColor ion-padding-horizontal"
-      >
+      <IonContent className="dashboardWrapp ionContentColor ion-padding-horizontal taskDetailsContent">
         {loading && <IonProgressBar type="indeterminate" />}
         <div className="ionPaddingBottom">
-          <IonList lines="full" className="ion-list-item ">
+          <IonList lines="none" className="ion-list-item taskDetailsList">
             {taskData.length > 0 &&
-              taskData.map((obj: any, index: any) => {
+              taskData.map((obj: any) => {
                 const { icon, labelTxt, valueTxt, key } = obj;
                 return (
                   <TaskDetailItems
@@ -372,11 +365,11 @@ const TaskDetails: React.FC = () => {
           </IonList>
         </div>
       </IonContent>
-      <IonFooter className="ion-footer">
+      <IonFooter className="ion-footer ion-no-border">
         <IonToolbar className="ionFooterTwoButtons">
           <IonButton
             className="ion-button"
-            color={"medium"}
+            color="medium"
             routerLink="/taskreschedule"
             disabled={
               taskDetails.service_status === "On Going" ||
@@ -387,8 +380,8 @@ const TaskDetails: React.FC = () => {
           </IonButton>
           <IonButton
             className="ion-button"
-            color={"primary"}
-            onClick={(e) => startTask()}
+            color="primary"
+            onClick={() => startTask()}
           >
             {nextButton}
           </IonButton>
@@ -403,7 +396,7 @@ const TaskDetails: React.FC = () => {
         onClose={handleCloseAlert}
         onMessageClick={handleNavigateToList}
       />
-    </>
+    </IonPage>
   );
 };
 

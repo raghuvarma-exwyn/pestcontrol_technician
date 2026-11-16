@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import {
-  IonAlert,
   IonButton,
   IonContent,
   IonImg,
@@ -18,33 +17,20 @@ import {
   IonInput,
   IonLabel,
   IonProgressBar,
-  IonSegment,
-  IonSegmentButton,
-  IonBadge,
   IonText,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
 } from "@ionic/react";
 import CommonHeader from "../components/CommonHeader";
-import TaskComponent from "../components/TaskComponent";
 import {
-    fetchOtherTaskData,
-  fetchTaskData,
-  fetchTaskDetails,
+  fetchOtherTaskData,
   formatDate,
 } from "../data/apidata/taskApi/taskDataApi";
-import { formatTime, getDate, getJustDate } from "../utils/dateTimeUtils";
-import { toast, ToastContainer } from "react-toastify";
+import { formatTime, getJustDate } from "../utils/dateTimeUtils";
+import { ToastContainer } from "react-toastify";
 import useLongitudeLocation from "../components/useLongitudeLocation";
 import "react-toastify/dist/ReactToastify.css";
-import { userCheckIn } from "../data/apidata/authApi/dataApi";
-import {
-  retrieveNetworkFilteredTasks,
-  retrieveNetworkTasks,
-} from "../data/offline/entity/DataRetriever";
-import { retrieveNetworkTasksDetails } from "../data/offline/entity/DataRetriever";
 import GoTop from "../components/GoTop";
-import { Storage } from "@capacitor/storage";
 import { getCurrentLocation } from "../data/providers/GeoLocationProvider";
 import OtherTaskComponent from "../components/OtherTaskComponent";
 
@@ -205,43 +191,8 @@ const OtherTasks: React.FC = () => {
     }
   };
 
-  const handleTaskClick = async (
-    taskId: string,
-    index: number,
-    status: string
-  ) => {
-    if (status === "complete") {
-      toast.success("Service Request is already complete.", {
-        autoClose: 3000,
-      });
-      history.push("/tasks");
-      return;
-    }
-
-    const ongoingTask = taskData.find(
-      (task: any) =>
-        task.service_status.toLowerCase() === "on going" && task.id !== taskId
-    );
-
-    if (ongoingTask) {
-      toast.info(
-        "Please complete or pause the ongoing task before starting or resuming another one.",
-        { autoClose: 3000 }
-      );
-      history.push("/tasks");
-      return;
-    }
-
-    try {
-      const taskDetails = await retrieveNetworkTasksDetails(taskId);
-      localStorage.setItem("activeTaskData", JSON.stringify(taskDetails));
-      await Storage.set({ key: 'visit_id', value: taskId });
-
-      history.push(`/tasks/${taskId}`);
-    } catch (error) {
-      console.error("Error fetching task details:", error);
-      toast.error("Server not responding. Please try again later.");
-    }
+  const handleTaskClick = (taskId: string) => {
+    history.push(`/othertasks/${taskId}`);
   };
 
   const handleInput = async (ev: CustomEvent) => {
@@ -343,85 +294,75 @@ const OtherTasks: React.FC = () => {
     (event.target as HTMLIonInfiniteScrollElement).complete();
   };
   return (
-    <IonPage>
+    <IonPage className="otherTasksPage">
       <CommonHeader
         backToPath={"/dashboard"}
         pageTitle={"Other Tasks"}
         showIcons={true}
       />
-      <IonContent
-        fullscreen
-        className="dashboardWrapp ionContentColor ion-padding-horizontal"
-      >
+      <IonContent className="dashboardWrapp ionContentColor ion-padding-horizontal">
         {loading && <IonProgressBar type="indeterminate" />}
-        <div>
-            <div>
-              <IonItem
-                lines="none"
-                className="ion-item-inner ion-no-padding ion-margin-vertical"
-              >
-                <IonSearchbar
-                  ref={searchInputRef}
-                  debounce={500}
-                  onIonInput={handleInput}
-                ></IonSearchbar>
-                <div className="ion-float_end">
-                  <IonButton
-                    shape="round"
-                    onClick={() => setIsOpen(true)}
-                    className="roundedWhiteBtIcon ion-no-margin"
-                  >
-                    <IonImg src="assets/images/filter-icon.svg"></IonImg>
-                  </IonButton>
-                </div>
-              </IonItem>
 
-              <IonList lines="none" className="ion-list-item">
-                {!loading &&
-                  filteredTaskData.length === 0 &&
-                  (filterApplied ? (
-                    <p style={{ textAlign: "center", width: "100%" }}>
-                      No tasks found with the applied filter.
-                    </p>
-                  ) : (
-                    pendingOngoingCount === 0 && (
-                      <p style={{ textAlign: "center", width: "100%" }}>
-                        There is no current task, use{" "}
-                        <b onClick={() => setIsOpen(true)}>filter</b> (or){" "}
-                        <b onClick={handleSearchClick}>Search</b> to get
-                        previous Tasks
-                      </p>
-                    )
-                  ))}
-
-                {filteredTaskData.length > 0 &&
-                  filteredTaskData.map((task: any, index: any) => (
-                    <IonItem
-                      key={task.id}
-                      onClick={() =>
-                        handleTaskClick(task.id, index, task.service_status)
-                      }
-                      lines="full"
-                    >
-                      <div className="task-container">
-                        <OtherTaskComponent
-                          id={task.id}
-                          path={`/othertasks/${task.id}`}
-                          title={task.task_name}
-                          subTitle={task.treatment_name}
-                          serviceDate={task.task_date}
-                          date={`${formatDate(task.created_on)}  ${formatTime(
-                            task.created_on
-                          )}`}
-                           status={task.status_name}
-                          imgSrc="/assets/images/location-icon.svg"
-                        />
-                      </div>
-                    </IonItem>
-                  ))}
-              </IonList>
-            </div>
+        <div className="tasksSearchBar">
+          <IonSearchbar
+            ref={searchInputRef}
+            className="tasksSearchInput"
+            debounce={500}
+            placeholder="Search"
+            onIonInput={handleInput}
+          />
+          <IonButton
+            shape="round"
+            onClick={() => setIsOpen(true)}
+            className="tasksFilterBtn"
+            aria-label="Filter tasks"
+          >
+            <IonImg src="assets/images/filter-icon.svg" />
+          </IonButton>
         </div>
+
+        <IonList lines="none" className="ion-list-item">
+          {!loading &&
+            filteredTaskData.length === 0 &&
+            (filterApplied ? (
+              <p className="tasksEmptyMsg">
+                No tasks found with the applied filter.
+              </p>
+            ) : (
+              <p className="tasksEmptyMsg">
+                There is no current task, use{" "}
+                <b onClick={() => setIsOpen(true)}>filter</b> (or){" "}
+                <b onClick={handleSearchClick}>Search</b> to get previous
+                Tasks
+              </p>
+            ))}
+
+          {filteredTaskData.length > 0 &&
+            filteredTaskData.map((task: any, index: any) => (
+              <IonItem
+                key={task.id}
+                button
+                detail={true}
+                className="taskListItem"
+                onClick={() => handleTaskClick(task.id)}
+                lines="none"
+              >
+                <OtherTaskComponent
+                  id={task.id}
+                  path={`/othertasks/${task.id}`}
+                  title={task.task_name}
+                  subTitle={task.treatment_name}
+                  serviceDate={task.task_date}
+                  date={`${formatDate(task.created_on)}  ${formatTime(
+                    task.created_on
+                  )}`}
+                  status={task.status_name}
+                  imgSrc="/assets/images/location-icon.svg"
+                />
+              </IonItem>
+            ))}
+        </IonList>
+
         <IonInfiniteScroll
           threshold="100px"
           onIonInfinite={loadMoreTasks}
@@ -430,9 +371,10 @@ const OtherTasks: React.FC = () => {
           <IonInfiniteScrollContent
             loadingSpinner="bubbles"
             loadingText="Loading more Tasks..."
-          ></IonInfiniteScrollContent>
+          />
         </IonInfiniteScroll>
       </IonContent>
+
       <IonModal className="ion-bottom-modal filterModal" isOpen={isOpen}>
         <IonHeader>
           <IonToolbar>
@@ -465,50 +407,52 @@ const OtherTasks: React.FC = () => {
                       value={filterselectedCriterias.service_status}
                       name="service_status"
                       onIonChange={handleFilterChange}
-                      labelPlacement="floating"
+                      interface="popover"
                       placeholder="Select"
                       fill="outline"
-                      aria-label=""
+                      aria-label="Status"
                     >
                       <IonSelectOption value="">Select Status</IonSelectOption>
-                      <IonSelectOption value="OTHER_TASK_SCHEDULED">Scheduled</IonSelectOption>
-                      <IonSelectOption value="OTHER_TASK_PENDING">Pending</IonSelectOption>
-                      <IonSelectOption value="OTHER_TASK_ON_GOING">On Going</IonSelectOption>
-                      <IonSelectOption value="OTHER_TASK_COMPLETED">Completed</IonSelectOption>
+                      <IonSelectOption value="OTHER_TASK_SCHEDULED">
+                        Scheduled
+                      </IonSelectOption>
+                      <IonSelectOption value="OTHER_TASK_PENDING">
+                        Pending
+                      </IonSelectOption>
+                      <IonSelectOption value="OTHER_TASK_ON_GOING">
+                        On Going
+                      </IonSelectOption>
+                      <IonSelectOption value="OTHER_TASK_COMPLETED">
+                        Completed
+                      </IonSelectOption>
                     </IonSelect>
                   </div>
                 </IonItem>
                 {filterError ? (
-                  <IonText style={{ color: "red" }}>
+                  <IonText color="danger">
                     Please select Date (or) Status
                   </IonText>
-                ) : (
-                  ""
-                )}
+                ) : null}
               </IonList>
 
-              <IonButton
-                color="primary"
-                className="ion-button ion-margin-top"
-                fill="solid"
-                size="default"
-                expand="block"
-                onClick={handleFilterSubmit}
-              >
-                Search
-              </IonButton>
-
-              <IonButton
-                className="ion-button ion-margin-vertical"
-                color="medium"
-                size="default"
-                // onClick={() => setIsOpen(false)}
-                onClick={handleCancel}
-                fill="solid"
-                expand="block"
-              >
-                Clear
-              </IonButton>
+              <div className="footerTwoBtnRow" style={{ padding: "12px 0 0" }}>
+                <IonButton
+                  className="ion-button"
+                  color="medium"
+                  fill="outline"
+                  onClick={handleCancel}
+                >
+                  Clear
+                </IonButton>
+                <IonButton
+                  className="ion-button"
+                  color="primary"
+                  fill="solid"
+                  onClick={handleFilterSubmit}
+                >
+                  Search
+                </IonButton>
+              </div>
             </div>
           </form>
         </IonContent>
