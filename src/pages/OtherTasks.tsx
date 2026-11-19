@@ -47,6 +47,7 @@ import GoTop from "../components/GoTop";
 import { Storage } from "@capacitor/storage";
 import { getCurrentLocation } from "../data/providers/GeoLocationProvider";
 import OtherTaskComponent from "../components/OtherTaskComponent";
+import FullScreenLoaderTask from "../components/FullScreenLoaderTask";
 
 
 const OtherTasks: React.FC = () => {
@@ -55,6 +56,7 @@ const OtherTasks: React.FC = () => {
     useState<string>("pendingSegment");
   const [filteredTaskData, setFilteredTaskData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isTaskLoading, setIsTaskLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const history = useHistory();
   const location = useLongitudeLocation();
@@ -210,6 +212,7 @@ const OtherTasks: React.FC = () => {
     index: number,
     status: string
   ) => {
+    if (isTaskLoading) return;
     if (status === "complete") {
       toast.success("Service Request is already complete.", {
         autoClose: 3000,
@@ -218,21 +221,22 @@ const OtherTasks: React.FC = () => {
       return;
     }
 
-    const ongoingTask = taskData.find(
-      (task: any) =>
-        task.service_status.toLowerCase() === "on going" && task.id !== taskId
-    );
-
-    if (ongoingTask) {
-      toast.info(
-        "Please complete or pause the ongoing task before starting or resuming another one.",
-        { autoClose: 3000 }
-      );
-      history.push("/tasks");
-      return;
-    }
-
+    setIsTaskLoading(true);
     try {
+      const ongoingTask = taskData.find(
+        (task: any) =>
+          task.service_status.toLowerCase() === "on going" && task.id !== taskId
+      );
+
+      if (ongoingTask) {
+        toast.info(
+          "Please complete or pause the ongoing task before starting or resuming another one.",
+          { autoClose: 3000 }
+        );
+        history.push("/tasks");
+        return;
+      }
+
       const taskDetails = await retrieveNetworkTasksDetails(taskId);
       localStorage.setItem("activeTaskData", JSON.stringify(taskDetails));
       await Storage.set({ key: 'visit_id', value: taskId });
@@ -241,6 +245,8 @@ const OtherTasks: React.FC = () => {
     } catch (error) {
       console.error("Error fetching task details:", error);
       toast.error("Server not responding. Please try again later.");
+    } finally {
+      setIsTaskLoading(false);
     }
   };
 
@@ -514,6 +520,7 @@ const OtherTasks: React.FC = () => {
         </IonContent>
       </IonModal>
       <ToastContainer autoClose={3000} />
+      <FullScreenLoaderTask isLoading={isTaskLoading} />
       <GoTop />
     </IonPage>
   );

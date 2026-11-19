@@ -113,10 +113,14 @@ const Home: React.FC = () => {
   };
 
   const handleNavigateToList = () => {
-    history.push({
-      pathname: "/MaterialList",
-      state: { showAlert: true },
-    });
+    setShowAlert(false);
+    // Dismiss overlay first so Ionic route change is not blocked
+    setTimeout(() => {
+      history.push({
+        pathname: "/MaterialList",
+        state: { showAlert: true },
+      });
+    }, 150);
   };
 
   const alertButtons = [

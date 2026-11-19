@@ -1,51 +1,71 @@
 import React from "react";
-import { IonAlert } from "@ionic/react";
-// import './globe.css' 
 
 interface CustomAlertProps {
   isOpen: boolean;
-  // title: string;
   subHeader: string;
   message: string;
-  buttons: any[];
+  buttons: Array<{
+    text: string;
+    cssClass?: string;
+    role?: string;
+    handler?: () => void | Promise<void>;
+  }>;
   onClose: () => void;
-  onMessageClick: () => void; // Define the prop for message click
+  onMessageClick?: () => void;
 }
 
 const CustomAlert: React.FC<CustomAlertProps> = ({
   isOpen,
-  // title,
   subHeader,
   message,
   buttons,
   onClose,
-  onMessageClick, // Include the prop
+  onMessageClick,
 }) => {
-  return (
-    <IonAlert
-      isOpen={isOpen}
-      // header={title}
-      subHeader={subHeader}
-      message={message}
-      buttons={buttons}
-      onDidDismiss={onClose}
-      // Call onMessageClick when message is clicked
+  if (!isOpen) return null;
 
-      cssClass="custom-alert custom-alert-size"
-      onDidPresent={() => {
-        const messageElement = document.querySelector(".alert-message");
-        if (messageElement) {
-          messageElement.addEventListener("click", onMessageClick);
-        }
-      }}
-      // Cleanup event listener when alert is dismissed
-      onWillDismiss={() => {
-        const messageElement = document.querySelector(".alert-message");
-        if (messageElement) {
-          messageElement.removeEventListener("click", onMessageClick);
-        }
-      }}
-    />
+  const handleButtonClick = async (button: CustomAlertProps["buttons"][0]) => {
+    if (button.handler) {
+      await button.handler();
+    } else {
+      onClose();
+    }
+  };
+
+  return (
+    <div className="custom-alert-overlay" onClick={onClose}>
+      <div
+        className="custom-alert-box"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <p className="custom-alert-subheader">{subHeader}</p>
+
+        {message && (
+          <button
+            type="button"
+            className="custom-alert-message"
+            onClick={() => onMessageClick?.()}
+          >
+            {message}
+          </button>
+        )}
+
+        <div className="custom-alert-buttons">
+          {buttons.map((button, index) => (
+            <button
+              key={`${button.text}-${index}`}
+              type="button"
+              className={`custom-alert-btn ${button.cssClass || ""}`}
+              onClick={() => handleButtonClick(button)}
+            >
+              {button.text}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };
 
