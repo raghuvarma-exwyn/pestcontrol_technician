@@ -146,11 +146,13 @@ const OtherTaskDetails: React.FC = () => {
   ];
 
   const handleNavigateToList = () => {
-
-    history.push({
-      pathname: "/MaterialList",
-      state: { showAlert: true },
-    });
+    setShowAlert(false);
+    setTimeout(() => {
+      history.push({
+        pathname: "/MaterialList",
+        state: { showAlert: true },
+      });
+    }, 150);
   };
 
   const resolveImageSrc = (image: any) => {
@@ -249,10 +251,12 @@ const OtherTaskDetails: React.FC = () => {
   };
 
   const startTask = async () => {
-    const isOngoing: any = await checkOngoingTask();
-    console.log("isOngoing", isOngoing);
-
+    if (isStartingTask) return;
+    setIsStartingTask(true);
     try {
+      const isOngoing: any = await checkOngoingTask();
+      console.log("isOngoing", isOngoing);
+
       if (taskDetails.start_time == null && taskDetails.end_time == null) {
         if (isOngoing.is_user_on_job == true) {
           toast.info(
@@ -261,12 +265,16 @@ const OtherTaskDetails: React.FC = () => {
           );
           return;
         }
+        setIsStartingTask(false);
         await takePictureAndSubmit("START");
+        return;
       } else if (taskDetails.start_time !== null && taskDetails.end_time == null) {
         setConfirmStop(true);
       }
     } catch (error) {
       console.error("Error:", error);
+    } finally {
+      setIsStartingTask(false);
     }
     console.log("Start or Continue Task . task data = ", taskDetails);
   };

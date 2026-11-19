@@ -46,6 +46,7 @@ import { retrieveNetworkTasksDetails } from "../data/offline/entity/DataRetrieve
 import GoTop from "../components/GoTop";
 import { Storage } from "@capacitor/storage";
 import { getCurrentLocation } from "../data/providers/GeoLocationProvider";
+import FullScreenLoaderTask from "../components/FullScreenLoaderTask";
 
 
 const Tasks: React.FC = () => {
@@ -54,6 +55,7 @@ const Tasks: React.FC = () => {
     useState<string>("pendingSegment");
   const [filteredTaskData, setFilteredTaskData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isTaskLoading, setIsTaskLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const history = useHistory();
   const location = useLongitudeLocation();
@@ -262,9 +264,8 @@ const Tasks: React.FC = () => {
     index: number,
     status: string
   ) => {
+    if (isTaskLoading) return;
     console.log(status);
-     const isOngoing: any = await checkOngoingTask();
-    console.log("isOngoing", isOngoing);
     if (status === "complete") {
       toast.success("Service Request is already complete.", {
         autoClose: 3000,
@@ -273,28 +274,32 @@ const Tasks: React.FC = () => {
       return;
     }
 
-    const ongoingTask = taskData.find(
-      (task: any) =>
-        task.service_status.toLowerCase() === "on going" && task.id !== taskId
-    );
-   
-    if (ongoingTask) {
-      toast.info(
-        "Please complete or pause the ongoing task before starting or resuming another one.",
-        { autoClose: 3000 }
-      );
-      history.push("/tasks");
-      return;
-    }else if((status === "Pending" || status === "Paused") && isOngoing.is_user_on_job == true){
-      toast.info(
-        "Please complete or pause the ongoing task before starting or resuming another one.",
-        { autoClose: 3000 }
-      );
-      history.push("/tasks");
-      return;
-    }
-
+    setIsTaskLoading(true);
     try {
+      const isOngoing: any = await checkOngoingTask();
+      console.log("isOngoing", isOngoing);
+
+      const ongoingTask = taskData.find(
+        (task: any) =>
+          task.service_status.toLowerCase() === "on going" && task.id !== taskId
+      );
+   
+      if (ongoingTask) {
+        toast.info(
+          "Please complete or pause the ongoing task before starting or resuming another one.",
+          { autoClose: 3000 }
+        );
+        history.push("/tasks");
+        return;
+      }else if((status === "Pending" || status === "Paused") && isOngoing.is_user_on_job == true){
+        toast.info(
+          "Please complete or pause the ongoing task before starting or resuming another one.",
+          { autoClose: 3000 }
+        );
+        history.push("/tasks");
+        return;
+      }
+
       const taskDetails = await retrieveNetworkTasksDetails(taskId);
       localStorage.setItem("activeTaskData", JSON.stringify(taskDetails));
       await Storage.set({ key: 'visit_id', value: taskId });
@@ -303,6 +308,8 @@ const Tasks: React.FC = () => {
     } catch (error) {
       console.error("Error fetching task details:", error);
       toast.error("Server not responding. Please try again later.");
+    } finally {
+      setIsTaskLoading(false);
     }
   };
 
@@ -736,6 +743,7 @@ const Tasks: React.FC = () => {
         </IonContent>
       </IonModal>
       <ToastContainer autoClose={3000} />
+      <FullScreenLoaderTask isLoading={isTaskLoading} />
       <GoTop />
     </IonPage>
   );

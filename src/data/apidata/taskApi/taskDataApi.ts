@@ -1383,8 +1383,20 @@ export const getvisittraveldetails = async (requestBody: any) => {
 
 
 /////////////////////////Request Material////////////////////////////////////////////
+const mapRequestStockItem = (item: any) => {
+  if (!item || typeof item !== "object") return item;
+  const { required_qty, _uid, ...rest } = item;
+  return {
+    ...rest,
+    quantity: rest.quantity ?? required_qty,
+  };
+};
+
 export const requestMaterials = async (materialData: any) => {
   const userData = getUserData();
+  const payload = Array.isArray(materialData)
+    ? materialData.map(mapRequestStockItem)
+    : mapRequestStockItem(materialData);
   try {
     const response = await fetch(`${API_BASE_URL}/v1/request-stock`, {
       method: "POST",
@@ -1392,7 +1404,7 @@ export const requestMaterials = async (materialData: any) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${userData?.api_token}`,
       },
-      body: JSON.stringify(materialData),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {

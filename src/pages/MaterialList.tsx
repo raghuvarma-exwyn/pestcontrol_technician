@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useHistory } from "react-router";
+import { useHistory, useLocation } from "react-router";
 import { arrowBack } from "ionicons/icons";
 import { getCurrentLocation } from "../data/providers/GeoLocationProvider";
 import { requestMaterials, taskInit } from "../data/apidata/taskApi/taskDataApi";
@@ -29,6 +29,11 @@ interface Material {
 
 const MaterialList: React.FC = () => {
   const history = useHistory();
+  const location = useLocation<{
+    showAlert?: boolean;
+    logType?: string;
+    trackingType?: string;
+  }>();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [requestButtonStatus, setRequestButtonStatus] = useState<boolean>(true);
   const [requestButtonName, setRequestButtonName] = useState<string>('Request');
@@ -64,12 +69,20 @@ const MaterialList: React.FC = () => {
       }
       const activeTaskData = JSON.parse(taskDataStr);
       const taskId = activeTaskData.id; // Assuming the task ID is in the first element
+      const serviceStatus = (activeTaskData.service_status || "").toLowerCase();
+      const isResume = serviceStatus === "on going" || serviceStatus === "paused";
+      const logType =
+        location.state?.logType ||
+        (isResume ? "Service Request Resume" : "Service Request Start");
+      const trackingType =
+        location.state?.trackingType ||
+        (isResume ? "Service Resumed" : "Service Initiated");
 
       const { response, data } = await taskInit(
         taskId,
         formattedDate,
-        "Service Request Start",
-        "Service Initiated"
+        logType,
+        trackingType
       );
 
       if (response.ok) {

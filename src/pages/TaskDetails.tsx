@@ -47,6 +47,7 @@ import { Network } from "@capacitor/network";
 import { submitTaskStart } from "../data/offline/entity/DataTransfer";
 import { toast } from "react-toastify";
 import NotificationLength from "../components/NotificationLength";
+import FullScreenLoaderTask from "../components/FullScreenLoaderTask";
 const TaskDetails: React.FC = () => {
   const params: any = useParams();
   // const { id } = useParams<{ id: string }>(); // Dynamically fetch taskId from URL
@@ -181,21 +182,64 @@ const TaskDetails: React.FC = () => {
     },
   ];
 
-  const handleNavigateToList = () => {
-
-    history.push({
-      pathname: "/MaterialList",
-      state: { showAlert: true },
-    });
+  const getServiceRequestTypes = (status = taskDetails.service_status) => {
+    const serviceStatus = (status || "").toLowerCase();
+    const isResume = serviceStatus === "on going" || serviceStatus === "paused";
+    return {
+      logType: isResume ? "Service Request Resume" : "Service Request Start",
+      trackingType: isResume ? "Service Resumed" : "Service Initiated",
+    };
   };
+
+  const handleNavigateToList = () => {
+    const { logType, trackingType } = getServiceRequestTypes();
+    setShowAlert(false);
+    setTimeout(() => {
+      history.push({
+        pathname: "/MaterialList",
+        state: {
+          showAlert: true,
+          logType,
+          trackingType,
+        },
+      });
+    }, 150);
+  };
+  const handleChemicalRequiredCheck = (response: any, data: any) => {
+    console.log(
+      "Response from API:----------------------------------->",
+      response
+    );
+    console.log(
+      "Response from API:----------------------------------->",
+      data
+    );
+    if (response.ok) {
+      console.log("API Response:", data);
+      if (data.is_chemicals_required) {
+        setAllowInsufficientStock(!!data.allow_insufficient_stock);
+        setShowAlert(true);
+      } else {
+        history.push("/taskexecution");
+      }
+    } else {
+      console.error("Error Checking In ", response);
+      setError(data?.message);
+      if (data?.is_chemicals_required) {
+        setAllowInsufficientStock(!!data.allow_insufficient_stock);
+        setShowAlert(true);
+      }
+    }
+  };
+
   const startTask = async () => {
+    if (isStartingTask) return;
     console.log("Start or Continue Task . task data = ", taskDetails);
+    const serviceStatus = (taskDetails.service_status || "").toLowerCase();
+    setIsStartingTask(true);
     try {
-      if (
-        taskDetails.service_status.toLowerCase() === "on going" ||
-        taskDetails.service_status.toLowerCase() === "paused"
-      ) {
-        console.log("taskData.service_status == On Going ");
+      if (serviceStatus === "on going" || serviceStatus === "paused") {
+        console.log("taskData.service_status == On Going / Paused");
         try {
           const { response, data } = await retrieveNetworkTasksExecutionDetails(
             taskDetails.id
@@ -218,7 +262,14 @@ const TaskDetails: React.FC = () => {
           // toast.error('Server not responding. Please try again later.');
         }
 
-        history.push("/taskexecution");
+        const formattedDate = getDateTime();
+        const { response, data } = await submitTaskStart(
+          taskDetails.id,
+          formattedDate,
+          "Service Request Resume",
+          "Service Resumed"
+        );
+        handleChemicalRequiredCheck(response, data);
       } else if (taskDetails.service_status == "Completed") {
         console.log("taskData.service_status == Completed ");
         try {
@@ -246,13 +297,6 @@ const TaskDetails: React.FC = () => {
         //pending
         console.log("taskData.service_status == Pending ");
         const formattedDate = getDateTime();
-
-        // const { response, data } = await taskInit(
-        //   taskDetails.id,
-        //   formattedDate,
-        //   "Service Request Start",
-        //   "Service Initiated"
-        // );
         const { response, data } = await submitTaskStart(
           taskDetails.id,
           formattedDate,
@@ -260,36 +304,19 @@ const TaskDetails: React.FC = () => {
           "Service Initiated"
         );
 
-        console.log(
-          "Response from API:----------------------------------->",
-          response
-        );
-        console.log(
-          "Response from API:----------------------------------->",
-          data
-        );
         if (response.ok) {
-          const progressStatus: TaskProgress = setStartStatus("" + taskId);
-          console.log("API Response:", data); // Print the response in the console
-          if (data.is_chemicals_required) {
-            setAllowInsufficientStock(!!data.allow_insufficient_stock);
-            setShowAlert(true);
-          } else {
-            history.push("/taskexecution");
-          }
-        } else {
-          console.error("Error Checking In ", response);
-          setError(data.message);
-          if (data.is_chemicals_required) {
-            setAllowInsufficientStock(!!data.allow_insufficient_stock);
-            setShowAlert(true);
-          }
+          const progressStatus: TaskProgress = setStartStatus(
+            "" + taskDetails.id
+          );
+          console.log("Start progress status:", progressStatus);
         }
+        handleChemicalRequiredCheck(response, data);
       }
     } catch (error) {
       console.error("Error:", error);
       // toast.error('Server not responding. Please try again later.');
     } finally {
+      setIsStartingTask(false);
     }
   };
   const handleCloseAlert = () => {
@@ -314,15 +341,11 @@ const TaskDetails: React.FC = () => {
       role: "close",
       handler: () => handleCloseAlert(),
     },
-    ...(allowInsufficientStock
-      ? [
-          {
-            text: "Continue",
-            cssClass: "alert-button-confirm",
-            handler: () => handleContinueToExecution(),
-          },
-        ]
-      : []),
+    {
+      text: "Continue",
+      cssClass: "alert-button-confirm",
+      handler: () => handleContinueToExecution(),
+    },
   ];
   const goBack = () => {
     history.goBack();
@@ -380,8 +403,14 @@ const TaskDetails: React.FC = () => {
           </IonButton>
           <IonButton
             className="ion-button"
+<<<<<<< HEAD
             color="primary"
             onClick={() => startTask()}
+=======
+            color={"primary"}
+            disabled={isStartingTask}
+            onClick={(e) => startTask()}
+>>>>>>> 511cf74 (continue button changes)
           >
             {nextButton}
           </IonButton>
@@ -396,7 +425,12 @@ const TaskDetails: React.FC = () => {
         onClose={handleCloseAlert}
         onMessageClick={handleNavigateToList}
       />
+<<<<<<< HEAD
     </IonPage>
+=======
+      <FullScreenLoaderTask isLoading={isStartingTask} />
+    </>
+>>>>>>> 511cf74 (continue button changes)
   );
 };
 

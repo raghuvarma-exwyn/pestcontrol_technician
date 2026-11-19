@@ -684,6 +684,7 @@ export const fetchChemicalUseddataFromApi = async () => {
   const activeTaskData = JSON.parse(taskDataStr);
 
   const service_id= activeTaskData.service_id;
+  const visit_id = activeTaskData.id;
 
   // const location = useLongitudeLocation();
   const userData = getUserData();
@@ -704,6 +705,7 @@ export const fetchChemicalUseddataFromApi = async () => {
       filters: {
         "tbl_item_service_mapping.service_id": service_id,
       },
+      visit_id,
       pagination: {
         limit: "0",
         page: "1",
