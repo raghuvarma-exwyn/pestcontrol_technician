@@ -193,52 +193,10 @@ const OtherTasks: React.FC = () => {
     }
   };
 
-<<<<<<< HEAD
   const handleTaskClick = (taskId: string) => {
-    history.push(`/othertasks/${taskId}`);
-=======
-  const handleTaskClick = async (
-    taskId: string,
-    index: number,
-    status: string
-  ) => {
     if (isTaskLoading) return;
-    if (status === "complete") {
-      toast.success("Service Request is already complete.", {
-        autoClose: 3000,
-      });
-      history.push("/tasks");
-      return;
-    }
-
     setIsTaskLoading(true);
-    try {
-      const ongoingTask = taskData.find(
-        (task: any) =>
-          task.service_status.toLowerCase() === "on going" && task.id !== taskId
-      );
-
-      if (ongoingTask) {
-        toast.info(
-          "Please complete or pause the ongoing task before starting or resuming another one.",
-          { autoClose: 3000 }
-        );
-        history.push("/tasks");
-        return;
-      }
-
-      const taskDetails = await retrieveNetworkTasksDetails(taskId);
-      localStorage.setItem("activeTaskData", JSON.stringify(taskDetails));
-      await Storage.set({ key: 'visit_id', value: taskId });
-
-      history.push(`/tasks/${taskId}`);
-    } catch (error) {
-      console.error("Error fetching task details:", error);
-      toast.error("Server not responding. Please try again later.");
-    } finally {
-      setIsTaskLoading(false);
-    }
->>>>>>> 511cf74 (continue button changes)
+    history.push(`/othertasks/${taskId}`);
   };
 
   const handleInput = async (ev: CustomEvent) => {

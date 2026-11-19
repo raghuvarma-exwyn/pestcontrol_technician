@@ -403,14 +403,9 @@ const TaskDetails: React.FC = () => {
           </IonButton>
           <IonButton
             className="ion-button"
-<<<<<<< HEAD
-            color="primary"
-            onClick={() => startTask()}
-=======
             color={"primary"}
             disabled={isStartingTask}
             onClick={(e) => startTask()}
->>>>>>> 511cf74 (continue button changes)
           >
             {nextButton}
           </IonButton>
@@ -425,12 +420,8 @@ const TaskDetails: React.FC = () => {
         onClose={handleCloseAlert}
         onMessageClick={handleNavigateToList}
       />
-<<<<<<< HEAD
-    </IonPage>
-=======
       <FullScreenLoaderTask isLoading={isStartingTask} />
-    </>
->>>>>>> 511cf74 (continue button changes)
+    </IonPage>
   );
 };
 
