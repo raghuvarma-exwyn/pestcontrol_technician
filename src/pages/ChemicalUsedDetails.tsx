@@ -1,29 +1,35 @@
 import React, { useState, useEffect } from "react";
 import {
+  IonButton,
+  IonButtons,
+  IonCheckbox,
   IonContent,
   IonFooter,
+  IonHeader,
   IonPage,
+  IonProgressBar,
   IonSearchbar,
-  IonButton,
-  IonItem,
-  IonCheckbox,
+  IonTitle,
   IonToolbar,
-  IonSelect,
-  IonSelectOption,
-  IonList,
-  IonText,
-  IonProgressBar, // Import IonProgressBar
-  // Import IonProgressBar
 } from "@ionic/react";
 import { useHistory } from "react-router";
-import { fetchGetPestChemicalItems, requestMaterials } from "../data/apidata/taskApi/taskDataApi";
+import { requestMaterials } from "../data/apidata/taskApi/taskDataApi";
 import {
   retriveChemicalUsedBasedOnNetwork,
   retrieveChemicalUsedfromDB,
+  retrieveNetworkTasksExecutionDetails,
 } from "../data/offline/entity/DataRetriever";
+import {
+  buildUsedQtyIndexes,
+  getUsedQuantityForItem,
+  materialUsageKey,
+} from "../utils/visitChemicalUsage";
 import { Network } from "@capacitor/network";
-import { retrievePestActivityBasedOnNetwork } from "../data/offline/entity/DataRetriever";
 import { toast } from "react-toastify";
+import CustomBackButton from "../components/CustomBackButton";
+import "./MaterialList.css";
+import "./ChemicalUsedDetails.css";
+
 interface ChemicalItem {
   id: string;
   item_name: string;
@@ -31,17 +37,28 @@ interface ChemicalItem {
   [key: string]: any;
 }
 
-// Define a type for the pest option
 interface PestOption {
   id: string;
   item_id?: string;
   unit_id?: string;
   item_name: string;
   available_qty: string;
+  on_hand_quantity?: string | number;
   packaging_uom: string;
   required_qty?: string | number;
   quantity?: string | number;
 }
+
+const parseAvailableQty = (qty: string | number | undefined) => {
+  if (typeof qty === "number" && Number.isFinite(qty)) return qty;
+  const parsed = parseFloat(String(qty ?? "").trim().replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatQty = (qty: string | number | undefined) => {
+  const parsed = parseAvailableQty(qty);
+  return Number.isInteger(parsed) ? String(parsed) : parsed.toFixed(2);
+};
 
 const ChemicalUsedDetails: React.FC = () => {
   const history = useHistory();
@@ -51,30 +68,51 @@ const ChemicalUsedDetails: React.FC = () => {
   const [requestedItems, setRequestedItems] = useState<PestOption[]>([]);
   const [alreadyRequestedIds, setAlreadyRequestedIds] = useState<string[]>([]);
   const [title, setTitle] = useState<string>("Chemical List");
-  const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedOptions, setSelectedOptions] = useState("");
-  const [loading, setLoading] = useState<boolean>(true); // State for loading indicator
+  const [loading, setLoading] = useState<boolean>(true);
+  const [requesting, setRequesting] = useState<boolean>(false);
   const [isChemicalnotFound, setChemicalnotFound] = useState<boolean>(false);
+  const [usedByItem, setUsedByItem] = useState<Record<string, number>>({});
 
-  const isOutOfStock = (option: PestOption) => Number(option.available_qty) <= 0;
+  const getOnHandQuantity = (option: PestOption) =>
+    option.on_hand_quantity ?? option.available_qty;
 
   const getOptionKey = (option: PestOption) =>
     String(
       option.item_id != null && option.unit_id != null
         ? `${option.item_id}_${option.unit_id}`
-        : option.unit_id ?? option.item_id ?? option.id
+        : option.item_id ?? option.unit_id ?? option.id
     );
+
+  const getUsedQuantity = (option: PestOption) =>
+    usedByItem[materialUsageKey(option)] ??
+    usedByItem[getOptionKey(option)] ??
+    0;
+
+  const getRemainingQuantity = (option: PestOption) =>
+    Math.max(
+      0,
+      parseAvailableQty(getOnHandQuantity(option)) - getUsedQuantity(option)
+    );
+
+  const isOutOfStock = (option: PestOption) => getRemainingQuantity(option) <= 0;
 
   const uniqueByUnitId = (list: PestOption[]) => {
     const uniqueMap = new Map<string, PestOption>();
     list.forEach((item) => {
-      const key = getOptionKey(item);
-      if (!uniqueMap.has(key)) {
+      const key = `${item.item_id}_${item.unit_id}`;
+      const existing = uniqueMap.get(key);
+      if (
+        !existing ||
+        parseAvailableQty(getOnHandQuantity(item)) >
+          parseAvailableQty(getOnHandQuantity(existing))
+      ) {
         uniqueMap.set(key, item);
       }
     });
     return Array.from(uniqueMap.values());
   };
+
   useEffect(() => {
     const activeTaskData = JSON.parse(localStorage.getItem("activeTaskData")!);
     setTitle(activeTaskData.service_name);
@@ -82,36 +120,62 @@ const ChemicalUsedDetails: React.FC = () => {
   }, []);
 
   const fetchPestOptions = async () => {
-
     try {
-      setLoading(true); // Start loading indicator
+      setLoading(true);
       setChemicalnotFound(false);
+      const loadUsedQuantities = async (list: PestOption[]) => {
+        try {
+          const activeTaskData = JSON.parse(
+            localStorage.getItem("activeTaskData") || "{}"
+          );
+          const visitId = activeTaskData.id;
+          if (!visitId) {
+            setUsedByItem({});
+            return;
+          }
+          const executionDetails =
+            await retrieveNetworkTasksExecutionDetails(visitId);
+          const usedIndexes = buildUsedQtyIndexes(executionDetails);
+          const usedMap: Record<string, number> = {};
+          list.forEach((item) => {
+            const used = getUsedQuantityForItem(usedIndexes, item);
+            usedMap[materialUsageKey(item)] = used;
+            usedMap[getOptionKey(item)] = used;
+          });
+          setUsedByItem(usedMap);
+        } catch (usageError) {
+          console.error("Error fetching chemical usage:", usageError);
+          setUsedByItem({});
+        }
+      };
       const networkStatus = await Network.getStatus();
-      // setIsOnline(networkStatus.connected);
 
       if (networkStatus.connected) {
-        // Online: Fetch data from API
         const { response, data } = await retriveChemicalUsedBasedOnNetwork();
         const chemicalList = Array.isArray(data?.data) ? data.data : [];
-        console.log("chemicalList", chemicalList);
-        if (response && response.ok && data?.success !== false && chemicalList.length > 0) {
-          setPestOptions(uniqueByUnitId(chemicalList));
+        const uniqueList = uniqueByUnitId(chemicalList);
+        setPestOptions(uniqueList);
+        if (
+          response &&
+          response.ok &&
+          data?.success !== false &&
+          chemicalList.length > 0
+        ) {
           setChemicalnotFound(false);
         } else {
-          
-         // console.log("chemicalList", chemicalList);
-          setPestOptions(uniqueByUnitId(chemicalList));
           setChemicalnotFound(true);
           if (data?.message) {
             toast.error(data.message, { toastId: "chemical-data-not-found" });
           }
         }
+        await loadUsedQuantities(uniqueList);
       } else {
-        // Offline: Fetch data from local storage or handle offline scenario
         const localData = await retrieveChemicalUsedfromDB();
         const chemicalList = Array.isArray(localData) ? localData : [];
-        setPestOptions(uniqueByUnitId(chemicalList));
+        const uniqueList = uniqueByUnitId(chemicalList);
+        setPestOptions(uniqueList);
         setChemicalnotFound(chemicalList.length === 0);
+        await loadUsedQuantities(uniqueList);
       }
     } catch (error) {
       console.error("Error fetching pest options:", error);
@@ -161,6 +225,7 @@ const ChemicalUsedDetails: React.FC = () => {
     }
 
     try {
+      setRequesting(true);
       const requestPayload = requestedItems.map(
         ({ required_qty, ...item }) => ({
           ...item,
@@ -179,22 +244,20 @@ const ChemicalUsedDetails: React.FC = () => {
     } catch (error) {
       console.error("Error:", error);
       toast.error("Server not responding. Please try again later.");
+    } finally {
+      setRequesting(false);
     }
   };
 
-  // ==================getting option(yes,no) to localstorage===============
   useEffect(() => {
     const selectOpt = localStorage.getItem("selectedOptions");
     if (selectOpt) {
       setSelectedOptions(JSON.parse(selectOpt) || []);
     }
   }, []);
-  console.log(selectedOptions);
-  const handleSubmit = () => {
-    // ==================setting option(yes,no) to localstorage===============
 
+  const handleSubmit = () => {
     localStorage.setItem("selectedOptions", JSON.stringify(selectedOptions));
-    //
     const selectedPestActIndForChem = localStorage.getItem(
       "selectedPestActIndForChem"
     );
@@ -205,7 +268,6 @@ const ChemicalUsedDetails: React.FC = () => {
     }
 
     if (selectedItems.length > 0) {
-      // Retrieve the existing selected items from localStorage based on the key
       const storedItems = localStorage.getItem(
         `selectedChemicalItems_${selectedPestActIndForChem}`
       );
@@ -213,31 +275,27 @@ const ChemicalUsedDetails: React.FC = () => {
         ? JSON.parse(storedItems)
         : [];
 
-      // Append the new selected items to the existing ones
       selectedChemicalItems = selectedChemicalItems.concat(
         selectedItems as ChemicalItem[]
       );
 
-      // Remove duplicate items based on item_id + unit_id
       const uniqueItemsMap = new Map<string, ChemicalItem>();
       selectedChemicalItems.forEach((item: ChemicalItem) => {
         uniqueItemsMap.set(getOptionKey(item as PestOption), item);
       });
       const uniqueSelectedChemicalItems = Array.from(uniqueItemsMap.values());
 
-      // Save the updated array back to localStorage with the correct key
       localStorage.setItem(
         `selectedChemicalItems_${selectedPestActIndForChem}`,
         JSON.stringify(uniqueSelectedChemicalItems)
       );
 
-      // Navigate to the chemical used page with the updated state
       history.push({
         pathname: "/chemicalused",
         state: { selectedItems: uniqueSelectedChemicalItems },
       });
     } else {
-      alert("Please select at least one chemical.");
+      toast.error("Please select at least one chemical.");
     }
   };
 
@@ -245,96 +303,138 @@ const ChemicalUsedDetails: React.FC = () => {
     setSearchText((ev.target as HTMLIonSearchbarElement).value || "");
   };
 
-  const filteredPestOptions = (Array.isArray(pestOptions) ? pestOptions : []).filter(
-    (option) =>
+  const filteredPestOptions = (
+    Array.isArray(pestOptions) ? pestOptions : []
+  )
+    .filter((option) =>
       option.item_name?.toLowerCase().includes(searchText.toLowerCase())
-  );
+    )
+    .sort((a, b) => Number(isOutOfStock(a)) - Number(isOutOfStock(b)));
 
   const handleCancel = () => {
     history.push("/chemicalused");
   };
 
+  const hasOutOfStock = pestOptions.some(isOutOfStock);
+  const isItemChecked = (option: PestOption) => {
+    const optionKey = getOptionKey(option);
+    if (isOutOfStock(option)) {
+      return requestedItems.some((item) => getOptionKey(item) === optionKey);
+    }
+    return selectedItems.some((item) => getOptionKey(item) === optionKey);
+  };
+  const isItemDisabled = (option: PestOption) => {
+    if (isOutOfStock(option)) {
+      return alreadyRequestedIds.includes(getOptionKey(option));
+    }
+    return requestedItems.length > 0;
+  };
+
   return (
-    <IonPage>
-      <IonContent
-        fullscreen
-        className="ionContentColor ion-padding-vertical ion-padding-horizontal"
-      >
-        <IonSearchbar
-          placeholder="Search By Chemicals / Materials"
-          value={searchText}
-          debounce={500}
-          onIonInput={handleSearch}
-          onIonChange={(e) => setSearchText(e.detail.value || "")} // Ensure that empty string is set when no value
-        />
+    <IonPage className="materialListPage chemicalUsedDetailsPage">
+      <IonHeader className="ion-no-border ion-padding-horizontal">
+        <IonToolbar>
+          <IonButtons slot="start" className="ion-no-padding">
+            <IonButton onClick={handleCancel}>
+              <CustomBackButton />
+            </IonButton>
+          </IonButtons>
+          <IonTitle className="ion-float-start">Chemical List</IonTitle>
+        </IonToolbar>
+      </IonHeader>
 
-        {loading &&   // Render loading indicator if loading is true
-          <IonProgressBar type="indeterminate" color="primary" />}
-        {filteredPestOptions.length === 0 ? (
-          !loading && (
-            <p style={{ textAlign: "center", width: "100%" }}>
-              {isChemicalnotFound ? "Data Not Found" : "No Chemicals Available"}
-            </p>
-          )
-        ) : (
+      <IonContent fullscreen className="ionContentColor">
+        {loading && <IonProgressBar type="indeterminate" color="primary" />}
 
+        <div className="ion-padding-horizontal ion-padding-vertical ionPaddingBottom">
+          <IonSearchbar
+            placeholder="Search chemicals / materials"
+            value={searchText}
+            debounce={500}
+            onIonInput={handleSearch}
+            onIonChange={(e) => setSearchText(e.detail.value || "")}
+          />
 
-          <div className="ion-padding-vertical ionPaddingBottom">
-            <h1 className="headingH1 ion-padding-top">
-              {title}
-            </h1>
-            <IonList lines="full" class="ion-list-item listItemAll">
-              {filteredPestOptions.map((option: any) => (
-                <IonItem key={getOptionKey(option)} className={
-                  isOutOfStock(option) ? "outofstock"
-                    : ""
-                }>
-                  <IonText className="listCont">
-                    <h3>{option.item_name}</h3>
-
-                    <p>
-                      Quantity: {option.available_qty} -{" "}
-                      {option.packaging_uom || "No Units"}
-
-                    </p>
-                    {isOutOfStock(option) ? <span className="noStock">Out of stock</span> : ''}
-                  </IonText>
-                  <IonCheckbox
-                    className="listContRight"
-                    slot="end"
-                    justify="end"
-                    value={getOptionKey(option)}
-                    disabled={
-                      isOutOfStock(option)
-                        ? alreadyRequestedIds.includes(getOptionKey(option))
-                        : requestedItems.length > 0
-                    }
-                    checked={
-                      isOutOfStock(option)
-                        ? requestedItems.some(
-                            (item) => getOptionKey(item) === getOptionKey(option)
-                          )
-                        : selectedItems.some(
-                            (item) => getOptionKey(item) === getOptionKey(option)
-                          )
-                    }
-                    onIonChange={(e) =>
-                      handleCheckboxChange(option, !!e.detail.checked)
-                    }
-                  />
-
-                </IonItem>
-              ))}
-            </IonList>
-          </div>
-        )}
+          {!loading && filteredPestOptions.length === 0 ? (
+            <div className="materialEmpty">
+              <h2>
+                {isChemicalnotFound
+                  ? "Data not found"
+                  : searchText
+                    ? "No matching chemicals"
+                    : "No chemicals available"}
+              </h2>
+              <p>
+                {searchText
+                  ? "Try a different search term."
+                  : "Nothing is listed for this service yet."}
+              </p>
+            </div>
+          ) : (
+            <>
+              {title && (
+                <h1 className="headingH1">{title}</h1>
+              )}
+              <div className="materialList">
+                {filteredPestOptions.map((option) => {
+                  const unit = option.packaging_uom || "No Units";
+                  const outOfStock = isOutOfStock(option);
+                  const remaining = getRemainingQuantity(option);
+                  const checked = isItemChecked(option);
+                  return (
+                    <div
+                      key={getOptionKey(option)}
+                      className={`materialCard chemicalCard${
+                        outOfStock ? " outofstock" : ""
+                      }${checked ? " selected" : ""}`}
+                    >
+                      <div className="chemicalCardBody">
+                        <h3>{option.item_name}</h3>
+                        <div
+                          className={`chemicalAvailable${
+                            outOfStock ? " short" : ""
+                          }`}
+                        >
+                          <span className="chemicalAvailableLabel">
+                            Available
+                          </span>
+                          <span className="chemicalAvailableValue">
+                            {formatQty(remaining)}
+                          </span>
+                          <span className="chemicalAvailableUnit">{unit}</span>
+                        </div>
+                      </div>
+                      <div className="chemicalCardMeta">
+                        <span
+                          className={`materialBadge ${
+                            outOfStock ? "short" : "ok"
+                          }`}
+                        >
+                          {outOfStock ? "Out of stock" : "In stock"}
+                        </span>
+                        <IonCheckbox
+                          className="chemicalCardCheck"
+                          value={getOptionKey(option)}
+                          disabled={isItemDisabled(option)}
+                          checked={checked}
+                          onIonChange={(e) =>
+                            handleCheckboxChange(option, !!e.detail.checked)
+                          }
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
       </IonContent>
+
       <IonFooter className="ion-footer">
         <IonToolbar
           className={
-            pestOptions.some(isOutOfStock)
-              ? "ionFooterThreeButtons"
-              : "ionFooterTwoButtons"
+            hasOutOfStock ? "ionFooterThreeButtons" : "ionFooterTwoButtons"
           }
         >
           <IonButton
@@ -345,15 +445,15 @@ const ChemicalUsedDetails: React.FC = () => {
           >
             Cancel
           </IonButton>
-          {pestOptions.some(isOutOfStock) && (
+          {hasOutOfStock && (
             <IonButton
               className="ion-button"
               fill="outline"
               color="primary"
-              disabled={requestedItems.length === 0}
+              disabled={requestedItems.length === 0 || requesting}
               onClick={requestMaterial}
             >
-              Request
+              {requesting ? "Requesting..." : "Request"}
             </IonButton>
           )}
           <IonButton

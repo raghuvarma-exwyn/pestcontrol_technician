@@ -241,7 +241,10 @@ const App: React.FC = () => {
       const AppSettings = await appSettings();
       console.log(AppSettings);
       if (AppSettings && AppSettings.data.success) {
-        const GoogleKey = AppSettings.data.data.find((setting: any) => setting.title === "Google_Map_API_Key");
+        const settings = Array.isArray(AppSettings.data.data)
+          ? AppSettings.data.data
+          : [];
+        const GoogleKey = settings.find((setting: any) => setting.title === "Google_Map_API_Key");
         console.log(GoogleKey);
         if (GoogleKey) {
           localStorage.setItem('Google_Map_API_Key', GoogleKey.description);
