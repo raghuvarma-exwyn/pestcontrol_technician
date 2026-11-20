@@ -29,27 +29,30 @@ const AppUpdate: React.FC = () => {
             console.log(AppSettings);
             console.log(platform);
             if (AppSettings && AppSettings.data.success) {
+                const settings = Array.isArray(AppSettings.data.data)
+                    ? AppSettings.data.data
+                    : [];
                 if (platform === 'ios' || platform === 'android') {
                     console.log('Running on Device');
                     const appInfos = await App.getInfo();
                     localStorage.setItem('app_version', appInfos.version);
                     if (platform === 'android') {
-                        const AndroidVersion = AppSettings.data.data.find((setting: any) => setting.title === "Pest_Control_Android_Version");
+                        const AndroidVersion = settings.find((setting: any) => setting.title === "Pest_Control_Android_Version");
                         console.log(AndroidVersion);
-                        if (AndroidVersion.description > appInfos.version) {
-                            const appLink = AppSettings.data.data.find((setting: any) => setting.title === "Pest_Control_Android_App_link");
-                            setUpdateLink(appLink.description);
+                        if (AndroidVersion?.description > appInfos.version) {
+                            const appLink = settings.find((setting: any) => setting.title === "Pest_Control_Android_App_link");
+                            setUpdateLink(appLink?.description || '');
                             setUpdateAvailable(true);
                         }else{
                             setUpdateAvailable(false);
                         }
                     }
                     if (platform === 'ios') {
-                        const IosVersion = AppSettings.data.data.find((setting: any) => setting.title === " ");
+                        const IosVersion = settings.find((setting: any) => setting.title === "Pest_Control_IOS_Version");
                         console.log(IosVersion);
-                        if (IosVersion.description > appInfos.version) {
-                            const appLink = AppSettings.data.data.find((setting: any) => setting.title === "Pest_Control_IOS_App_link");
-                            setUpdateLink(appLink.description);
+                        if (IosVersion?.description > appInfos.version) {
+                            const appLink = settings.find((setting: any) => setting.title === "Pest_Control_IOS_App_link");
+                            setUpdateLink(appLink?.description || '');
                             setUpdateAvailable(true);
                         }else{
                             setUpdateAvailable(false);

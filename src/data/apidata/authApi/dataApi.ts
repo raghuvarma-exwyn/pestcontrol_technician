@@ -6,6 +6,7 @@ import {
   getAuthHeaders,
   getSessionUser,
 } from "../../auth/sessionAuth";
+import { parseSettingsList } from "../../../utils/decryptSettings";
 /////Get User Data from session Storage///////////
 const getUserData = () => {
   const userData = getSessionUser();
@@ -28,6 +29,9 @@ export const appSettings = async () => {
     });
     console.log(response);
     const data = await response.json();
+    if (data?.success) {
+      data.data = await parseSettingsList(data.data);
+    }
     return { response, data };
   } catch (error) {
     throw error;
